@@ -1,0 +1,162 @@
+﻿<Page x:Class="synthesis_program.Views.ProductPassRate"
+          xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+          xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+          Background="#FFEBEBEB">
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- 查询条件区域 -->
+        <Border Grid.Row="0" Background="White" Padding="10"
+                    BorderBrush="#FFCCCCCC" BorderThickness="0 0 0 1">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <!-- 机型 -->
+                <StackPanel Margin="5,0">
+                    <TextBlock Text="机型" Margin="0 0 0 2"/>
+                    <ComboBox x:Name="prod_type" Width="120" Height="26" FontSize="14"
+                                  BorderBrush="#FFCCCCCC" SelectedIndex="0"
+                                  IsEditable="True" Loaded="ModelComboBox_Loaded"
+                                  ItemsSource="{Binding allMachineKind}"
+                              SelectedItem="MachineKindSingle" SelectionChanged="MachineSelectChanged">
+                    </ComboBox>
+                </StackPanel>
+
+                <!-- 模组 -->
+                <StackPanel Margin="10,0">
+                    <TextBlock Text="模组" Margin="0 0 0 2"/>
+                    <ComboBox x:Name="prod_module" Width="120" Height="26" FontSize="14"
+                                  BorderBrush="#FFCCCCCC" SelectedIndex="0" 
+                              ItemsSource="{Binding Modules}" SelectedItem="ModuleSingle" SelectionChanged="prod_module_SelectionChanged">
+                    </ComboBox>
+                </StackPanel>
+
+                <!-- 工艺 -->
+                <StackPanel Margin="10,0">
+                    <TextBlock Text="工艺" Margin="0 0 0 2"/>
+                    <ComboBox x:Name="prod_model" Width="120" Height="26" FontSize="14"
+                                  BorderBrush="#FFCCCCAA" SelectedIndex="0" 
+                              ItemsSource="{Binding Processes}" SelectedItem="processSingle" SelectionChanged="prod_model_SelectionChanged">
+                    </ComboBox>
+                </StackPanel>
+
+                <!-- 工单 -->
+                <StackPanel Margin="10,0">
+                    <TextBlock Text="工单" Margin="0 0 0 2"/>
+                    <ComboBox x:Name="mo" Width="120" Height="26" FontSize="14"
+                            BorderBrush="#FFCCCCCC" SelectedIndex="0"
+                            IsEditable="True"
+                            ItemsSource="{Binding AllMo}" Loaded="mo_Loaded">
+                    </ComboBox>
+                </StackPanel>
+
+                <!-- 班组 -->
+                <StackPanel Margin="10,0">
+                    <TextBlock Text="班组" Margin="0 0 0 2"/>
+                    <ComboBox x:Name="team" Width="100" Height="26" FontSize="14"
+                                  BorderBrush="#FFCCCCFF" SelectedIndex="0" ItemsSource="{Binding Teams}">
+                    </ComboBox>
+                </StackPanel>
+
+                <StackPanel Margin="10,5" VerticalAlignment="Center">
+                    <DatePicker x:Name="datePick" />
+                </StackPanel>
+                <!-- 查询按钮 -->
+                <Button Content="查询" Margin="20,0,0,0" Padding="20,5"
+                            Background="#FFCCCCCC" Foreground="White"
+                            FontWeight="Bold" Click="QueryButton_Click" Height="35"/>
+
+                <Button Content="导出" Margin="30,0,0,0" Padding="20,5"
+                            Background="#FFCCCCCC" Foreground="White"
+                            FontWeight="Bold" Click="ExportButton_Click" Height="35"/>
+            </StackPanel>
+        </Border>
+
+        <!-- 主内容区域 -->
+        <Grid Grid.Row="1" Margin="0,10,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="200"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- 站点选择 -->
+            <Border Grid.Column="0" Background="White"
+                        BorderBrush="#FFCCCCCC" BorderThickness="1">
+                <StackPanel Margin="10">
+                    <TextBlock Text="站点" FontWeight="Bold" Margin="0,0,0,10"/>
+                    <ItemsControl ItemsSource="{Binding Stations}" >
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <CheckBox Content="{Binding Name}" 
+                                              IsChecked="{Binding IsChecked}"
+                                              Margin="5,3">
+                                    <CheckBox.Style>
+                                        <Style TargetType="CheckBox">
+                                            <Style.Triggers>
+                                                <Trigger Property="IsChecked" Value="True">
+                                                    <Setter Property="Background" Value="#FF0078D7"/>
+                                                    <Setter Property="Foreground" Value="#FF0078D7"/>
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </CheckBox.Style>
+                                </CheckBox>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+
+            <!-- 数据区域 -->
+
+            <Border Grid.Column="1" Margin="10,0,0,81" Background="White"
+        BorderBrush="#FFCCCCCC" BorderThickness="1">
+                <!-- 添加滚动容器 -->
+                <ScrollViewer VerticalScrollBarVisibility="Auto" 
+                  HorizontalScrollBarVisibility="Auto"
+                  Padding="0">
+                    <!-- 数据表格 -->
+                    <DataGrid Grid.Row="1" 
+                x:Name="rateDataGrid"
+                AutoGenerateColumns="False"
+                CanUserAddRows="False"
+                SelectionMode="Single"
+                SelectionUnit="FullRow"
+                RowHeight="25"
+                FontSize="15"
+                ItemsSource="{Binding RateList}"
+                SelectedItem="{Binding RateListSingle}"
+                Margin="0,0,0,0">
+                        <!-- 移除底部margin -->
+                        <DataGrid.Resources>
+                            <Style TargetType="DataGridColumnHeader">
+                                <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                                <Setter Property="HorizontalAlignment" Value="Stretch"/>
+                                <Setter Property="FontWeight" Value="Bold"/>
+                                <Setter Property="Height" Value="30"/>
+                            </Style>
+                        </DataGrid.Resources>
+
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="机型" Binding="{Binding prod_type}" Width="Auto"/>
+                            <DataGridTextColumn Header="模组" Binding="{Binding prod_module}" Width="Auto"/>
+                            <DataGridTextColumn Header="工艺" Binding="{Binding prod_model}" Width="Auto"/>
+                            <DataGridTextColumn Header="站点" Binding="{Binding prod_station}" Width="Auto"/>
+                            <DataGridTextColumn Header="工单" Binding="{Binding mo}" Width="Auto"/>
+                            <DataGridTextColumn Header="班组" Binding="{Binding prod_team}" Width="Auto"/>
+                            <DataGridTextColumn Header="直通率" Binding="{Binding pass_rate}" Width="Auto"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </ScrollViewer>
+            </Border>
+
+            <Border Grid.Column="1" Margin="10,0,0,0" VerticalAlignment="Bottom" Background="White"
+BorderBrush="#FFCCCCCC" BorderThickness="1" Height="62">
+                <Label Name="lbl_warning"  Content="正在查询，请勿重复点击!" HorizontalAlignment="Center" VerticalAlignment="Center" Width="200" Height="30" Foreground="Red"/>
+
+            </Border>
+        </Grid>
+    </Grid>
+</Page>
+    

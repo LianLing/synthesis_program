@@ -1,0 +1,84 @@
+﻿<Page x:Class="synthesis_program.Views.CreateSequencePage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      mc:Ignorable="d" 
+      d:DesignHeight="950" d:DesignWidth="1200"
+      Title="标签管理">
+
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+
+        <!-- 搜索栏 -->
+        <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Horizontal" Margin="20,3,0,10">
+            <TextBox x:Name="searchBox" 
+                     Width="250" Height="34" Margin="10,0"
+                     TextWrapping="Wrap"
+                     TextChanged="SearchBox_TextChanged"
+                     Tag="输入料号或创建人"/>
+        </StackPanel>
+
+        <StackPanel Grid.Row="0" Orientation="Horizontal"  Margin="0,0,50,3" HorizontalAlignment="Center">
+            <!--<Button Content="查询" Width="90" Margin="5" Click="SearchButton_Click"/>-->
+            <!--<Button Content="新增" Width="60" Margin="5" Click="AddButton_Click"/>-->
+            <Button Content="删除" Width="90" Margin="5" Click="DeleteButton_Click"/>
+            <Button Content="修改" Width="90" Margin="5" Click="EditButton_Click"/>
+            <Button Content="保存" Width="90" Margin="5" Click="SaveButton_Click"/>
+        </StackPanel>
+
+
+
+        <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Right" Margin="5,0,100,0">
+            <Label Content="数量：" HorizontalAlignment="Right" Margin="5" VerticalAlignment="Top"/>
+            <TextBox HorizontalAlignment="Right" Margin="0,5,20,5" TextWrapping="Wrap" Name="txt_quality" VerticalAlignment="Top" Width="100" Height="26"/>
+            <Button Content="生成" HorizontalAlignment="Right" Margin="5"  VerticalAlignment="Top" Height="24" Width="60" Click="CreateButton_Click"/>
+        </StackPanel>
+
+        <!-- 数据表格 -->
+        <DataGrid Grid.Row="1" 
+                  x:Name="tagsDataGrid"
+                  AutoGenerateColumns="False"
+                  CanUserAddRows="False"
+                  SelectionMode="Single"
+                  SelectionUnit="FullRow"
+                  ItemsSource="{Binding TagsList}"
+                  SelectedItem="{Binding TagsListSingle}"
+                  Margin="0,10,0,0">
+            <DataGrid.Resources>
+                <Style TargetType="DataGridColumnHeader">
+                    <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                    <Setter Property="HorizontalAlignment" Value="Stretch"/>
+                    <Setter Property="FontWeight" Value="Bold"/>
+                </Style>
+            </DataGrid.Resources>
+
+            <DataGrid.Columns>
+
+                <DataGridTextColumn Header="ID" Binding="{Binding Id}" IsReadOnly="True" Width="Auto"/>
+                <DataGridTextColumn Header="料号" Binding="{Binding MaterialId}" Width="Auto"/>
+                <DataGridTextColumn Header="图纸" Binding="{Binding PictureAddress}" Width="Auto"/>
+                <DataGridTextColumn Header="模板" Binding="{Binding ModelName}" Width="Auto"/>
+                <DataGridTextColumn Header="序列号" Binding="{Binding SequenceId}" Width="150"/>
+                <DataGridCheckBoxColumn Header="已生成序列号" Binding="{Binding IsCreated}" Width="Auto"/>
+                <DataGridTextColumn Header="打印次数" Binding="{Binding PrintTimes}" Width="Auto"/>
+                <DataGridTextColumn Header="关联机型" Binding="{Binding ConnectMachine}" Width="Auto"/>
+                <DataGridTextColumn Header="创建人" Binding="{Binding Creater}" Width="Auto"/>
+                <DataGridTextColumn Header="创建时间" 
+                   Binding="{Binding CreateTime, StringFormat=yyyy-MM-dd HH:mm:ss}" 
+                   Width="Auto"/>
+                <DataGridTextColumn Header="修改人" Binding="{Binding Editor}" Width="Auto"/>
+                <DataGridTextColumn Header="修改时间" 
+                                  Binding="{Binding EditTime, StringFormat=yyyy-MM-dd HH:mm:ss}" 
+                                  Width="Auto"/>
+                <DataGridTextColumn Header="备注" Binding="{Binding Remark}" Width="Auto"/>
+            </DataGrid.Columns>
+        </DataGrid>
+
+
+    </Grid>
+</Page>
