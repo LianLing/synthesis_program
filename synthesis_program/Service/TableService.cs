@@ -19,13 +19,14 @@ namespace synthesis_program.Service
         public TableService() => _db = new DbContext();
         public void Dispose() => _db?.Dispose();
 
-        public async Task<List<string>> QueryMachineKind()
+        public async Task<List<Prod_TypeModel>> QueryMachineKind()
         {
             try
             {
-                string sql = $@"SELECT t.`code` FROM hts_pcs.prod_type t WHERE t.CODE > 'A001' ORDER BY t.code";
-                var dataTable = await _db.Instance.Ado.GetDataTableAsync(sql).ConfigureAwait(false);
-                return dataTable.Rows.Cast<DataRow>().Select(row => row[0].ToString()).ToList();
+                string sql = $@"SELECT t.`code`,t.name FROM hts_pcs.prod_type t WHERE t.CODE > 'A001' ORDER BY t.name";
+                var codes = await _db.Instance.Ado.SqlQueryAsync<Prod_TypeModel>(sql).ConfigureAwait(false);
+
+                return codes;
             }
             catch (Exception)
             {
@@ -48,12 +49,12 @@ namespace synthesis_program.Service
             }
         }
 
-        public List<string> QueryProcesses(string machineKind)
+        public List<string> QueryProcesses(string code)
         {
             try
             {
-                string sql = $@"SELECT t.`code` FROM hts_pcs.prod_model t WHERE t.prod_type = @prod_type  ORDER BY `code`";
-                return _db.Instance.Ado.SqlQuery<string>(sql, new { prod_type = machineKind }).ToList();
+                string sql = $@"SELECT t.`code` FROM hts_pcs.prod_model t WHERE t.prod_type = @prod_type  ORDER BY t.`code`";
+                return _db.Instance.Ado.SqlQuery<string>(sql, new { prod_type = code }).ToList();
             }
             catch (Exception)
             {
@@ -148,9 +149,10 @@ namespace synthesis_program.Service
                 };
                 //SN数量
                 string str = string.Empty;
-                string str1 = "AND t.prod_team = '{passRateModel.prod_team}'";
-                string str2 = $@" AND DATE_FORMAT(t.finished_stamp,'%Y-%m-%d') = DATE_FORMAT('{passRateModel.finished_stamp}','%Y-%m-%d') ";
-                string str3 = "and t.mo = '{passRateModel.mo}'";
+                string str1 = $@"AND t.prod_team = '{passRateModel.prod_team}'";
+                string str2 = $@"AND DATE_FORMAT(t.finished_stamp,'%Y-%m-%d') = DATE_FORMAT('{passRateModel.finished_stamp}','%Y-%m-%d') ";
+                string str3 = $@"and t.mo = '{passRateModel.mo}'";
+                string str4 = $@"and t.station_curr in {passRateModel.prod_station}";
                 using (var sqlServerDb = new SqlSugarClient(sqlServerConfig))
                 {
 
@@ -160,40 +162,78 @@ namespace synthesis_program.Service
                         str += str3;
                     if (passRateModel.finished_stamp != null)
                         str += str2;
+                    str += str4;
                     string sql1 = $@"select count(1) from (select DISTINCT t.sn from prod_test_rcds t where 1=1 {str}) s ";
                     int allQuantity = await sqlServerDb.Ado.GetIntAsync(sql1).ConfigureAwait(false);
-                    //SN明细
-                    string sql2 = $@"select DISTINCT t.sn from prod_test_rcds t where 1=1 ";
-                    if (!string.IsNullOrEmpty(passRateModel.prod_team))
-                        sql2 += str1;
-                    if (passRateModel.finished_stamp != null)
-                        sql2 += str2;
-                    if (!string.IsNullOrEmpty(passRateModel.mo))
-                        sql2 += str3;
-                    List<string> list = new List<string>();
-                    var dt= await sqlServerDb.Ado.GetDataTableAsync(sql2).ConfigureAwait(false);
-                    list = dt.Rows.Cast<DataRow>().Select(row => row[0].ToString()).ToList();
-                    //直通数量
-                    int PassOK = 0;
-                    await Task.Run(() =>
+                    if (allQuantity > 0)
                     {
-                        foreach (var sn in list)
+                        //SN明细
+                        
+                        if (!string.IsNullOrEmpty(passRateModel.prod_team))
+                            str += str1;
+                        if (passRateModel.finished_stamp != null)
+                            str += str2;
+                        if (!string.IsNullOrEmpty(passRateModel.mo))
+                            str += str3;
+                        str += str4;
+                        string sql2 = $@"select DISTINCT t.sn from prod_test_rcds t where 1=1 {str}";
+                        List<string> list = new List<string>();
+                        var dt = await sqlServerDb.Ado.GetDataTableAsync(sql2).ConfigureAwait(false);
+                        list = dt.Rows.Cast<DataRow>().Select(row => row[0].ToString()).ToList();
+                        //直通数量
+                        int PassOK = allQuantity;
+                        await Task.Run(() =>
                         {
-                            //当前条件，该SN共有过站记录数量
-                            string sql3 = $@"select count(1) from prod_test_rcds t where 1=1 and t.sn = '{sn}' and t.model_curr = '{passRateModel.prod_model}' and t.station_curr in {passRateModel.prod_station}";
-                            int allsn =  sqlServerDb.Ado.SqlQuerySingle<int>(sql3);
-                            //当前SN过站PASS数量
-                            string sql4 = $@"select count(1) from prod_test_rcds t where 1=1 and t.sn = '{sn}' and t.model_curr = '{passRateModel.prod_model}' and t.`status` = 1 and t.tst_rlt >= 0 and t.station_curr in {passRateModel.prod_station}";
-                            int allPass =  sqlServerDb.Ado.SqlQuerySingle<int>(sql4);
-                            if (allPass == allsn)
-                                PassOK++;
-                        }
-                    });
+                            foreach (var sn in list)
+                            {
+                                ////当前条件，该SN共有过站记录数量
+                                //string sql3 = $@"select count(1) from prod_test_rcds t where 1=1 and t.sn = '{sn}' and t.model_curr = '{passRateModel.prod_model}' and t.station_curr in {passRateModel.prod_station}";
+                                //int allsn = sqlServerDb.Ado.SqlQuerySingle<int>(sql3);
+
+                                ////当前SN过站PASS数量
+                                //string sql4 = $@"select count(1) from prod_test_rcds t where 1=1 and t.sn = '{sn}' and t.model_curr = '{passRateModel.prod_model}' and t.`status` = 1 and t.tst_rlt >= 0 and t.station_curr in {passRateModel.prod_station}";
+                                //int allPass = sqlServerDb.Ado.SqlQuerySingle<int>(sql4);
+                                //if (allPass == allsn)
+                                //    PassOK++;
+
+                                string sql3 = $@"select count(1) from prod_test_rcds t where 1=1 and t.sn = '{sn}' and t.model_curr = '{passRateModel.prod_model}' and t.`status` <> 1 or t.tst_rlt < 0 and t.station_curr in {passRateModel.prod_station}";
+                                int notPass = sqlServerDb.Ado.SqlQuerySingle<int>(sql3);
+                                if (notPass > 0)
+                                {
+                                    PassOK--;
+                                }
+
+                            }
+                        });
+
+                        passRateModel.pass_rate = (PassOK * 1.00 / allQuantity * 100).ToString("0") + '%';
+                        infoList.Add(passRateModel);
+                        return infoList;
+                    }
+                    else
+                    {
+                        passRateModel.pass_rate = "NaN%";
+                        infoList.Add(passRateModel);
+                        return infoList;
+                    }
                     
-                    passRateModel.pass_rate = (PassOK * 1.00 / allQuantity * 100).ToString("0") + '%';
-                    infoList.Add(passRateModel);
                 }
-                return infoList;
+                
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+        }
+
+        public async Task<List<Prod_TypeModel>> QueryNewMachineKind()
+        {
+            try
+            {
+                string sql = $@"SELECT CONCAT(t.`code`,'   ' ,t.NAME) value FROM hts_pcs.prod_type t WHERE t.CODE > 'A001' ORDER BY t.code";
+                var dataTable = await _db.Instance.Ado.SqlQueryAsync<Prod_TypeModel>(sql).ConfigureAwait(false);
+                return dataTable;
             }
             catch (Exception)
             {

@@ -14,6 +14,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System;
 using static HtsCommon.DBMySql8.HtsDB;
+using System.Windows.Threading;
 
 namespace synthesis_program.Views
 {
@@ -21,8 +22,8 @@ namespace synthesis_program.Views
     {
         //站点
         public ObservableCollection<CheckBoxItem> Stations { get; set; } = new ObservableCollection<CheckBoxItem>();
-        //机型
-        public ObservableCollection<string> MachineKindSingle { get; set; } = new ObservableCollection<string>();
+        //机型数据源
+        public ObservableCollection<string> machineKind { get; set; } = new ObservableCollection<string>();
         //模组
         public ObservableCollection<string> Modules { get; set; } = new ObservableCollection<string>();
         public string ModuleSingle { get; set; }
@@ -31,8 +32,8 @@ namespace synthesis_program.Views
         public string processSingle { get; set; }
         //班组
         public ObservableCollection<string> Teams { get; set; } = new ObservableCollection<string>();
-        //机型数据源
-        public ObservableCollection<string> allMachineKind { get; set; } = new ObservableCollection<string>();
+        
+        public ObservableCollection<Prod_TypeModel> allMachineKind { get; set; } = new ObservableCollection<Prod_TypeModel>();
         //工单
         public ObservableCollection<string> AllMo { get; set; } = new ObservableCollection<string> { };
 
@@ -41,6 +42,7 @@ namespace synthesis_program.Views
         TableService tableService = new TableService();
         ProductPassRateModel rateModel = new ProductPassRateModel();
         private TextBox _comboBoxTextBox;
+        private string code = string.Empty;
 
 
         public ProductPassRate()
@@ -55,7 +57,15 @@ namespace synthesis_program.Views
         {
             // 初始化机型数据
             var result = await tableService.QueryMachineKind();
-            forechAdd(result, allMachineKind);
+            await Task.Run(() =>
+            {
+                foreach (var item in result)
+                {
+                    machineKind.Add(item.name);
+                    allMachineKind.Add(item);
+                }
+            });
+            
             ////初始化工单信息
             //var allMo = await tableService.QueryAllMoAsync(prod_type.SelectedItem.ToString());
             //forechAdd(allMo, AllMo);
@@ -82,7 +92,8 @@ namespace synthesis_program.Views
                                            .ToList();
             if (selectedStations.Count == 0)
             {
-                throw new Exception("未选择站点");
+                MessageBox.Show("请先选择站点");
+                return;
             }
             if (selectedStations.Count != 0)
             {
@@ -95,7 +106,7 @@ namespace synthesis_program.Views
             // 构建查询参数对象
             ProductPassRateModel passRateModel = new ProductPassRateModel()
             {
-                prod_type = prod_type.SelectedItem?.ToString(),
+                prod_type = code,
                 prod_module = prod_module.SelectedItem?.ToString(),
                 prod_model = prod_model.SelectedItem?.ToString(),
                 mo = mo.SelectedItem?.ToString(),
@@ -105,7 +116,7 @@ namespace synthesis_program.Views
                 pass_rate = "0"
             };
 
-            var list = await tableService.QueryPassRate(passRateModel);
+           var list = await tableService.QueryPassRate(passRateModel);
             await Task.Run(() =>
             {
                 foreach (var item in list)
@@ -142,12 +153,12 @@ namespace synthesis_program.Views
 
             if (string.IsNullOrEmpty(searchText))
             {
-                parentComboBox.ItemsSource = allMachineKind;
+                parentComboBox.ItemsSource = machineKind;
                 parentComboBox.IsDropDownOpen = false;
             }
             else
             {
-                var filteredItems = allMachineKind
+                var filteredItems = machineKind
                     .Where(item => item.IndexOf(searchText, StringComparison.OrdinalIgnoreCase) >= 0)
                     .ToList();
                 parentComboBox.ItemsSource = filteredItems;
@@ -172,7 +183,8 @@ namespace synthesis_program.Views
             if (prod_type.SelectedItem != null)
             {
                 //查询模组数据
-                var result = tableService.QueryModules(prod_type.SelectedItem.ToString());
+                code = allMachineKind.First(p => p.name == prod_type.SelectedItem.ToString()).code;
+                var result = tableService.QueryModules(code);
                 foreach (var module in result)
                 {
                     Modules.Add(module);
@@ -186,8 +198,9 @@ namespace synthesis_program.Views
             Processes.Clear();
             if (prod_type.SelectedItem != null)
             {
+                //string code = allMachineKind.First(p => p.name == prod_type.SelectedItem.ToString()).code;
                 //查询工艺数据
-                var result = tableService.QueryProcesses(prod_type.SelectedItem.ToString());
+                var result = tableService.QueryProcesses(code);
                 foreach (var module in result)
                 {
                     Processes.Add(module);
@@ -202,19 +215,22 @@ namespace synthesis_program.Views
             AllMo.Clear();
             if (prod_type.SelectedItem != null && prod_module.SelectedItem != null && prod_model.SelectedItem != null)
             {
+                //string code = allMachineKind.First(p => p.name == prod_type.SelectedItem.ToString()).code;
                 //查询站点数据
-                var result = tableService.QueryStations(prod_type.SelectedItem.ToString(), prod_module.SelectedItem.ToString(), prod_model.SelectedItem.ToString());
+                var result = tableService.QueryStations(code, prod_module.SelectedItem.ToString(), prod_model.SelectedItem.ToString());
                 foreach (var module in result)
                 {
                     CheckBoxItem checkBoxItem = new CheckBoxItem();
                     checkBoxItem.Name = module;
                     Stations.Add(checkBoxItem);
                 }
+
             }
             //初始化工单信息
             if (prod_type.SelectedItem != null)
             {
-                var allMo = await tableService.QueryAllMoAsync(prod_type.SelectedItem.ToString());
+                //string code = allMachineKind.First(p => p.name == prod_type.SelectedItem.ToString()).code;
+                var allMo = await tableService.QueryAllMoAsync(code);
                 if (allMo != null)
                 {
                     forechAdd(allMo, AllMo);
@@ -319,7 +335,7 @@ namespace synthesis_program.Views
                             rateCell.Value = item.pass_rate;
 
                             // 当直通率<95%时设置红色背景
-                            if (Convert.ToInt32(item.pass_rate.Substring(0, item.pass_rate.Length - 1)) < 95)
+                            if (!item.pass_rate.Contains("NaN") &&　Convert.ToInt32(item.pass_rate.Substring(0, item.pass_rate.Length - 1)) < 95)
                             {
                                 rateCell.Style.Fill.PatternType = ExcelFillStyle.Solid;
                                 rateCell.Style.Fill.BackgroundColor.SetColor(ColorTranslator.FromHtml("#FFC7CE"));
@@ -343,6 +359,21 @@ namespace synthesis_program.Views
             {
                 MessageBox.Show($"导出失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+        }
+
+        private void prod_type_DropDownOpened(object sender, EventArgs e)
+        {
+            //await Task.Run(() => 
+            //{
+            //    var list = tableService.QueryNewMachineKind();
+            //    foreach (var item in allMachineKind)
+            //    {
+            //        if (item == list.Result.Find(p=>p.code != null).code)
+            //        {
+
+            //        }
+            //    }
+            //});
         }
     }
 
