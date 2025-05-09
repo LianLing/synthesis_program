@@ -15,11 +15,11 @@ namespace synthesis_program.Models
         //机型
         public string prod_type { get; set; }
         //模组
-        public string prod_module { get; set; }
+        public string process_grp_curr { get; set; }
         //工艺
-        public string prod_model { get; set; }
+        public string model_curr { get; set; }
         //站点
-        public string prod_station { get; set; }
+        public string station_curr { get; set; }
         //工单
         public string mo { get; set; }
         //班组

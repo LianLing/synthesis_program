@@ -28,12 +28,12 @@ namespace synthesis_program
 
             base.OnStartup(e);
 
-            //if (!Hts.Init(e.Args))
-            //{
-            //    MessageBox.Show($"{Hts.ErrCode}: {Hts.ErrMsg}", "初始化失败", MessageBoxButton.OK, MessageBoxImage.Error);
-            //    Current.Shutdown(); // 初始化失败时退出
-            //    return;
-            //}
+            if (!Hts.Init(e.Args))
+            {
+                MessageBox.Show($"{Hts.ErrCode}: {Hts.ErrMsg}", "初始化失败", MessageBoxButton.OK, MessageBoxImage.Error);
+                Current.Shutdown(); // 初始化失败时退出
+                return;
+            }
 
             // 先创建主窗口实例
             var mainWindow = new MainWindow();

@@ -107,12 +107,12 @@ namespace synthesis_program.Views
             ProductPassRateModel passRateModel = new ProductPassRateModel()
             {
                 prod_type = code,
-                prod_module = prod_module.SelectedItem?.ToString(),
-                prod_model = prod_model.SelectedItem?.ToString(),
+                process_grp_curr = prod_module.SelectedItem?.ToString(),
+                model_curr = prod_model.SelectedItem?.ToString(),
                 mo = mo.SelectedItem?.ToString(),
                 finished_stamp = datePick.SelectedDate,
                 prod_team = team.SelectedItem?.ToString(),
-                prod_station = stationstr,
+                station_curr = stationstr,
                 pass_rate = "0"
             };
 
@@ -324,9 +324,9 @@ namespace synthesis_program.Views
                         foreach (var item in RateList)
                         {
                             worksheet.Cells[row, 1].Value = item.prod_type;
-                            worksheet.Cells[row, 2].Value = item.prod_module;
-                            worksheet.Cells[row, 3].Value = item.prod_model;
-                            worksheet.Cells[row, 4].Value = item.prod_station;
+                            worksheet.Cells[row, 2].Value = item.process_grp_curr;
+                            worksheet.Cells[row, 3].Value = item.model_curr;
+                            worksheet.Cells[row, 4].Value = item.station_curr;
                             worksheet.Cells[row, 5].Value = item.mo;
                             worksheet.Cells[row, 6].Value = item.prod_team;
 

@@ -152,7 +152,7 @@ namespace synthesis_program.Service
                 string str1 = $@"AND t.prod_team = '{passRateModel.prod_team}'";
                 string str2 = $@"AND DATE_FORMAT(t.finished_stamp,'%Y-%m-%d') = DATE_FORMAT('{passRateModel.finished_stamp}','%Y-%m-%d') ";
                 string str3 = $@"and t.mo = '{passRateModel.mo}'";
-                string str4 = $@"and t.station_curr in {passRateModel.prod_station}";
+                string str4 = $@"and t.station_curr in {passRateModel.station_curr}";
                 using (var sqlServerDb = new SqlSugarClient(sqlServerConfig))
                 {
 
@@ -186,22 +186,22 @@ namespace synthesis_program.Service
                         {
                             foreach (var sn in list)
                             {
-                                ////当前条件，该SN共有过站记录数量
-                                //string sql3 = $@"select count(1) from prod_test_rcds t where 1=1 and t.sn = '{sn}' and t.model_curr = '{passRateModel.prod_model}' and t.station_curr in {passRateModel.prod_station}";
-                                //int allsn = sqlServerDb.Ado.SqlQuerySingle<int>(sql3);
+                                //当前条件，该SN共有过站记录数量
+                                string sql3 = $@"select count(1) from prod_test_rcds t where 1=1 and t.sn = '{sn}' and t.model_curr = '{passRateModel.model_curr}' and t.station_curr in {passRateModel.station_curr}";
+                                int allsn = sqlServerDb.Ado.SqlQuerySingle<int>(sql3);
 
-                                ////当前SN过站PASS数量
-                                //string sql4 = $@"select count(1) from prod_test_rcds t where 1=1 and t.sn = '{sn}' and t.model_curr = '{passRateModel.prod_model}' and t.`status` = 1 and t.tst_rlt >= 0 and t.station_curr in {passRateModel.prod_station}";
-                                //int allPass = sqlServerDb.Ado.SqlQuerySingle<int>(sql4);
-                                //if (allPass == allsn)
-                                //    PassOK++;
+                                //当前SN过站PASS数量
+                                string sql4 = $@"select count(1) from prod_test_rcds t where 1=1 and t.sn = '{sn}' and t.model_curr = '{passRateModel.model_curr}' and t.`status` = 1 and t.tst_rlt >= 0 and t.station_curr in {passRateModel.station_curr}";
+                                int allPass = sqlServerDb.Ado.SqlQuerySingle<int>(sql4);
+                                if (allPass == allsn)
+                                    PassOK++;
 
-                                string sql3 = $@"select count(1) from prod_test_rcds t where 1=1 and t.sn = '{sn}' and t.model_curr = '{passRateModel.prod_model}' and t.`status` <> 1 or t.tst_rlt < 0 and t.station_curr in {passRateModel.prod_station}";
-                                int notPass = sqlServerDb.Ado.SqlQuerySingle<int>(sql3);
-                                if (notPass > 0)
-                                {
-                                    PassOK--;
-                                }
+                                //string sql3 = $@"select count(1) from prod_test_rcds t where 1=1 and t.sn = '{sn}' and t.model_curr = '{passRateModel.prod_model}' and t.`status` <> 1 or t.tst_rlt < 0 and t.station_curr in {passRateModel.prod_station}";
+                                //int notPass = sqlServerDb.Ado.SqlQuerySingle<int>(sql3);
+                                //if (notPass > 0)
+                                //{
+                                //    PassOK--;
+                                //}
 
                             }
                         });
