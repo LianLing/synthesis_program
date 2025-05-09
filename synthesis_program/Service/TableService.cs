@@ -181,7 +181,7 @@ namespace synthesis_program.Service
                         var dt = await sqlServerDb.Ado.GetDataTableAsync(sql2).ConfigureAwait(false);
                         list = dt.Rows.Cast<DataRow>().Select(row => row[0].ToString()).ToList();
                         //直通数量
-                        int PassOK = allQuantity;
+                        int PassOK = 0;
                         await Task.Run(() =>
                         {
                             foreach (var sn in list)
