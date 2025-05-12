@@ -28,6 +28,9 @@ namespace synthesis_program.Models
         public DateTime? finished_stamp { get; set; }
         //直通率
         public string pass_rate { get; set; }
+        public string sn { get; set; }
+        public int status { get; set; }
+        public int tst_rlt { get; set; }
 
     }
 }

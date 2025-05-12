@@ -140,9 +140,9 @@
 
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="机型" Binding="{Binding prod_type}" Width="Auto"/>
-                            <DataGridTextColumn Header="模组" Binding="{Binding prod_module}" Width="Auto"/>
-                            <DataGridTextColumn Header="工艺" Binding="{Binding prod_model}" Width="Auto"/>
-                            <DataGridTextColumn Header="站点" Binding="{Binding prod_station}" Width="Auto"/>
+                            <DataGridTextColumn Header="模组" Binding="{Binding process_grp_curr}" Width="Auto"/>
+                            <DataGridTextColumn Header="工艺" Binding="{Binding model_curr}" Width="Auto"/>
+                            <DataGridTextColumn Header="站点" Binding="{Binding station_curr}" Width="Auto"/>
                             <DataGridTextColumn Header="工单" Binding="{Binding mo}" Width="Auto"/>
                             <DataGridTextColumn Header="班组" Binding="{Binding prod_team}" Width="Auto"/>
                             <DataGridTextColumn Header="直通率" Binding="{Binding pass_rate}" Width="Auto"/>

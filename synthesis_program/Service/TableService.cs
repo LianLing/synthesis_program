@@ -138,7 +138,6 @@ namespace synthesis_program.Service
         {
             try
             {
-                List<ProductPassRateModel> infoList = new List<ProductPassRateModel>();
                 string database = "hts_prod_" + passRateModel.prod_type;
                 var sqlServerConfig = new ConnectionConfig()
                 {
@@ -147,82 +146,66 @@ namespace synthesis_program.Service
                     IsAutoCloseConnection = true,
                     InitKeyType = InitKeyType.Attribute
                 };
-                //SN数量
-                string str = string.Empty;
-                string str1 = $@"AND t.prod_team = '{passRateModel.prod_team}'";
-                string str2 = $@"AND DATE_FORMAT(t.finished_stamp,'%Y-%m-%d') = DATE_FORMAT('{passRateModel.finished_stamp}','%Y-%m-%d') ";
-                string str3 = $@"and t.mo = '{passRateModel.mo}'";
-                string str4 = $@"and t.station_curr in {passRateModel.station_curr}";
+
                 using (var sqlServerDb = new SqlSugarClient(sqlServerConfig))
                 {
-
+                    // 构建基础查询条件
+                    var conditions = new List<string>();
                     if (!string.IsNullOrEmpty(passRateModel.prod_team))
-                        str += str1;
+                        conditions.Add($@"t.prod_team = @ProdTeam");
                     if (!string.IsNullOrEmpty(passRateModel.mo))
-                        str += str3;
+                        conditions.Add($@"t.mo = @Mo");
                     if (passRateModel.finished_stamp != null)
-                        str += str2;
-                    str += str4;
-                    string sql1 = $@"select count(1) from (select DISTINCT t.sn from prod_test_rcds t where 1=1 {str}) s ";
-                    int allQuantity = await sqlServerDb.Ado.GetIntAsync(sql1).ConfigureAwait(false);
+                        conditions.Add($@"DATE_FORMAT(t.finished_stamp,'%Y-%m-%d') = DATE_FORMAT(@FinishedStamp,'%Y-%m-%d')");
+                    if (!string.IsNullOrEmpty(passRateModel.station_curr))
+                        conditions.Add($@"t.station_curr in {passRateModel.station_curr}");
+
+                    string whereClause = conditions.Any() ? "WHERE " + string.Join(" AND ", conditions) : "";
+
+                    // 创建参数化查询
+                    var parameters = new List<SugarParameter>
+            {
+                new SugarParameter("@ProdTeam", passRateModel.prod_team),
+                new SugarParameter("@Mo", passRateModel.mo),
+                new SugarParameter("@FinishedStamp", passRateModel.finished_stamp)
+            };
+
+                    // 查询总数量
+                    string countSql = $@"SELECT COUNT(1) FROM (SELECT DISTINCT t.sn FROM prod_test_rcds t {whereClause}) s";
+                    int allQuantity = await sqlServerDb.Ado.GetIntAsync(countSql, parameters.ToArray()).ConfigureAwait(false);
+
                     if (allQuantity > 0)
                     {
-                        //SN明细
-                        
-                        if (!string.IsNullOrEmpty(passRateModel.prod_team))
-                            str += str1;
-                        if (passRateModel.finished_stamp != null)
-                            str += str2;
-                        if (!string.IsNullOrEmpty(passRateModel.mo))
-                            str += str3;
-                        str += str4;
-                        string sql2 = $@"select DISTINCT t.sn from prod_test_rcds t where 1=1 {str}";
-                        List<string> list = new List<string>();
-                        var dt = await sqlServerDb.Ado.GetDataTableAsync(sql2).ConfigureAwait(false);
-                        list = dt.Rows.Cast<DataRow>().Select(row => row[0].ToString()).ToList();
-                        //直通数量
-                        int PassOK = 0;
-                        await Task.Run(() =>
-                        {
-                            foreach (var sn in list)
-                            {
-                                //当前条件，该SN共有过站记录数量
-                                string sql3 = $@"select count(1) from prod_test_rcds t where 1=1 and t.sn = '{sn}' and t.model_curr = '{passRateModel.model_curr}' and t.station_curr in {passRateModel.station_curr}";
-                                int allsn = sqlServerDb.Ado.SqlQuerySingle<int>(sql3);
+                        // 一次性查询所有SN的通过情况
+                        string passRateSql = $@"
+                    SELECT 
+                        sn,
+                        SUM(CASE WHEN t.`status` = 1 AND t.tst_rlt >= 0 THEN 1 ELSE 0 END) AS PassCount,
+                        COUNT(1) AS TotalCount
+                    FROM prod_test_rcds t
+                    {whereClause}
+                    AND t.model_curr = @ModelCurr
+                    GROUP BY sn
+                    HAVING COUNT(1) = SUM(CASE WHEN t.`status` = 1 AND t.tst_rlt >= 0 THEN 1 ELSE 0 END)";
 
-                                //当前SN过站PASS数量
-                                string sql4 = $@"select count(1) from prod_test_rcds t where 1=1 and t.sn = '{sn}' and t.model_curr = '{passRateModel.model_curr}' and t.`status` = 1 and t.tst_rlt >= 0 and t.station_curr in {passRateModel.station_curr}";
-                                int allPass = sqlServerDb.Ado.SqlQuerySingle<int>(sql4);
-                                if (allPass == allsn)
-                                    PassOK++;
+                        parameters.Add(new SugarParameter("@ModelCurr", passRateModel.model_curr));
+                        var passSns = await sqlServerDb.Ado.SqlQueryAsync<dynamic>(passRateSql, parameters.ToArray()).ConfigureAwait(false);
 
-                                //string sql3 = $@"select count(1) from prod_test_rcds t where 1=1 and t.sn = '{sn}' and t.model_curr = '{passRateModel.prod_model}' and t.`status` <> 1 or t.tst_rlt < 0 and t.station_curr in {passRateModel.prod_station}";
-                                //int notPass = sqlServerDb.Ado.SqlQuerySingle<int>(sql3);
-                                //if (notPass > 0)
-                                //{
-                                //    PassOK--;
-                                //}
-
-                            }
-                        });
-
-                        passRateModel.pass_rate = (PassOK * 1.00 / allQuantity * 100).ToString("0") + '%';
-                        infoList.Add(passRateModel);
-                        return infoList;
+                        int passOK = passSns.Count;
+                        passRateModel.pass_rate = (passOK * 100.0 / allQuantity).ToString("0") + '%';
                     }
                     else
                     {
-                        passRateModel.pass_rate = "NaN%";
-                        infoList.Add(passRateModel);
-                        return infoList;
+                        passRateModel.pass_rate = "0%";
                     }
-                    
-                }
-                
-            }
-            catch (Exception)
-            {
 
+                    return new List<ProductPassRateModel> { passRateModel };
+                }
+            }
+            catch (Exception ex)
+            {
+                // 记录日志
+                Console.WriteLine($"计算直通率时发生错误: {ex.Message}");
                 throw;
             }
         }
