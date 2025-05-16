@@ -15,6 +15,7 @@ using System.Threading.Tasks;
 using System;
 using static HtsCommon.DBMySql8.HtsDB;
 using System.Windows.Threading;
+using synthesis_program.ViewModels;
 
 namespace synthesis_program.Views
 {
@@ -32,13 +33,16 @@ namespace synthesis_program.Views
         public string processSingle { get; set; }
         //班组
         public ObservableCollection<string> Teams { get; set; } = new ObservableCollection<string>();
-        
+
         public ObservableCollection<Prod_TypeModel> allMachineKind { get; set; } = new ObservableCollection<Prod_TypeModel>();
         //工单
         public ObservableCollection<string> AllMo { get; set; } = new ObservableCollection<string> { };
 
         //表单
         public ObservableCollection<ProductPassRateModel> RateList { get; set; } = new ObservableCollection<ProductPassRateModel> { };
+        //数据源
+        public ObservableCollection<ProductPassRateViewModel> SourceList { get; set; } = new ObservableCollection<ProductPassRateViewModel> { };
+
         TableService tableService = new TableService();
         ProductPassRateModel rateModel = new ProductPassRateModel();
         private TextBox _comboBoxTextBox;
@@ -65,14 +69,17 @@ namespace synthesis_program.Views
                     allMachineKind.Add(item);
                 }
             });
-            
+
             ////初始化工单信息
             //var allMo = await tableService.QueryAllMoAsync(prod_type.SelectedItem.ToString());
             //forechAdd(allMo, AllMo);
             //初始化班组信息
             var allTeam = await tableService.QueryAllTeam();
             Teams.Add("");
-            forechAdd(allTeam, Teams);
+            foreach (var item in allTeam)
+            {
+                Teams.Add(item);
+            }
         }
 
         public void forechAdd(List<string> source, ObservableCollection<string> obj)
@@ -116,12 +123,12 @@ namespace synthesis_program.Views
                 pass_rate = "0"
             };
 
-           var list = await tableService.QueryPassRate(passRateModel);
+            var list = await tableService.QueryPassRate(passRateModel, prod_type.SelectedItem.ToString());
             await Task.Run(() =>
             {
                 foreach (var item in list)
                 {
-                    Application.Current.Dispatcher.Invoke(() => RateList.Add(item));
+                    Application.Current.Dispatcher.Invoke(() => SourceList.Add(item));
                 }
             });
             lbl_warning.Visibility = Visibility.Collapsed;
@@ -226,16 +233,7 @@ namespace synthesis_program.Views
                 }
 
             }
-            //初始化工单信息
-            if (prod_type.SelectedItem != null)
-            {
-                //string code = allMachineKind.First(p => p.name == prod_type.SelectedItem.ToString()).code;
-                var allMo = await tableService.QueryAllMoAsync(code);
-                if (allMo != null)
-                {
-                    forechAdd(allMo, AllMo);
-                }
-            }
+
         }
 
         private void mo_Loaded(object sender, RoutedEventArgs e)
@@ -283,7 +281,7 @@ namespace synthesis_program.Views
                 // 添加许可证声明（必须在所有EPPlus操作之前）
                 ExcelPackage.LicenseContext = OfficeOpenXml.LicenseContext.NonCommercial; // 非商业用途
 
-                if (RateList == null || !RateList.Any())
+                if (SourceList == null || !SourceList.Any())
                 {
                     MessageBox.Show("没有数据可以导出！", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
                     return;
@@ -302,7 +300,7 @@ namespace synthesis_program.Views
                         ExcelWorksheet worksheet = package.Workbook.Worksheets.Add("直通率报告");
 
                         // 设置表头
-                        string[] headers = { "机型", "模组", "工艺", "站点", "工单", "班组", "直通率" };
+                        string[] headers = { "月份", "周别", "日期", "线体", "IPQC", "PQE", "制令号", "状态", "机型", "版型", "直通率目标", "产品直通率", "检验数", "外观合格数", "性能不良数", "外观不良数", "TOP1（性能）", "修理原因", "数量", "TOP2（性能）", "修理原因", "数量", "TOP3（性能）", "修理原因", "数量", "TOP1（外观）", "修理原因", "数量", "TOP2（外观）", "修理原因", "数量", "TOP3（外观）", "修理原因", "数量" };
                         for (int i = 0; i < headers.Length; i++)
                         {
                             worksheet.Cells[1, i + 1].Value = headers[i];
@@ -321,21 +319,49 @@ namespace synthesis_program.Views
 
                         // 填充数据并设置条件格式
                         int row = 2;
-                        foreach (var item in RateList)
+                        foreach (var item in SourceList)
                         {
-                            worksheet.Cells[row, 1].Value = item.prod_type;
-                            worksheet.Cells[row, 2].Value = item.process_grp_curr;
-                            worksheet.Cells[row, 3].Value = item.model_curr;
-                            worksheet.Cells[row, 4].Value = item.station_curr;
-                            worksheet.Cells[row, 5].Value = item.mo;
-                            worksheet.Cells[row, 6].Value = item.prod_team;
+                            worksheet.Cells[row, 1].Value = item.Month;
+                            worksheet.Cells[row, 2].Value = item.Week;
+                            worksheet.Cells[row, 3].Value = item.Date;
+                            worksheet.Cells[row, 4].Value = item.Line;
+                            worksheet.Cells[row, 5].Value = item.IPQC;
+                            worksheet.Cells[row, 6].Value = item.PQE;
+                            worksheet.Cells[row, 7].Value = item.Monumber;
+                            worksheet.Cells[row, 8].Value = item.Status;
+                            worksheet.Cells[row, 9].Value = item.MachineKind;
+                            worksheet.Cells[row, 10].Value = item.Version;
+                            worksheet.Cells[row, 11].Value = item.TargetRate;
+                            worksheet.Cells[row, 12].Value = item.PassRate;
+                            worksheet.Cells[row, 13].Value = item.CheckCount;
+                            worksheet.Cells[row, 14].Value = item.CosmeticPassCount;
+                            worksheet.Cells[row, 15].Value = item.ErrorCount;
+                            worksheet.Cells[row, 16].Value = item.CosmeticErrorCount;
+                            worksheet.Cells[row, 17].Value = item.Top1Capcity;
+                            worksheet.Cells[row, 18].Value = item.RepairReason1;
+                            worksheet.Cells[row, 19].Value = item.Count1;
+                            worksheet.Cells[row, 20].Value = item.Top2Capcity;
+                            worksheet.Cells[row, 21].Value = item.RepairReason2;
+                            worksheet.Cells[row, 22].Value = item.Count2;
+                            worksheet.Cells[row, 23].Value = item.Top3Capcity;
+                            worksheet.Cells[row, 24].Value = item.RepairReason3;
+                            worksheet.Cells[row, 25].Value = item.Count3;
+                            worksheet.Cells[row, 26].Value = item.Top1Surface;
+                            worksheet.Cells[row, 27].Value = item.RepairReason_1;
+                            worksheet.Cells[row, 28].Value = item.Count_1;
+                            worksheet.Cells[row, 29].Value = item.Top2Surface;
+                            worksheet.Cells[row, 30].Value = item.RepairReason_2;
+                            worksheet.Cells[row, 31].Value = item.Count_2;
+                            worksheet.Cells[row, 32].Value = item.Top3Surface;
+                            worksheet.Cells[row, 33].Value = item.RepairReason_3;
+                            worksheet.Cells[row, 34].Value = item.Count_3;
 
                             // 直通率单元格特殊处理
-                            var rateCell = worksheet.Cells[row, 7];
+                            var rateCell = worksheet.Cells[row, 12];
                             rateCell.Value = item.pass_rate;
 
                             // 当直通率<95%时设置红色背景
-                            if (!item.pass_rate.Contains("NaN") &&　Convert.ToInt32(item.pass_rate.Substring(0, item.pass_rate.Length - 1)) < 95)
+                            if (!item.pass_rate.Contains("NaN") && Convert.ToInt32(item.pass_rate.Substring(0, item.pass_rate.Length - 1)) < 95)
                             {
                                 rateCell.Style.Fill.PatternType = ExcelFillStyle.Solid;
                                 rateCell.Style.Fill.BackgroundColor.SetColor(ColorTranslator.FromHtml("#FFC7CE"));
@@ -375,12 +401,25 @@ namespace synthesis_program.Views
             //    }
             //});
         }
-    }
 
-    // 站点选择辅助类
-    public class CheckBoxItem
-    {
-        public string Name { get; set; }
-        public bool IsChecked { get; set; }
+        private async void datePick_SelectedDateChanged(object sender, SelectionChangedEventArgs e)
+        {
+            //初始化工单信息
+            if (prod_type.SelectedItem != null && datePick != null)
+            {
+                var allMo = await tableService.QueryAllMoAsync(code, (DateTime)datePick.SelectedDate);
+                AllMo.Add("");
+                forechAdd(allMo, AllMo);
+            }
+            else
+                return;
+        }
+
+        // 站点选择辅助类
+        public class CheckBoxItem
+        {
+            public string Name { get; set; }
+            public bool IsChecked { get; set; }
+        }
     }
 }

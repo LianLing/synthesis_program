@@ -116,6 +116,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Models\InterimModel.cs" />
     <Compile Include="Models\ProductPassRateModel.cs" />
     <Compile Include="Models\Prod_TypeModel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

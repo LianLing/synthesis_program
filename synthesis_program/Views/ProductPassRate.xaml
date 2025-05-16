@@ -41,8 +41,11 @@
                     </ComboBox>
                 </StackPanel>
 
+                <StackPanel Margin="50,15,10,5" VerticalAlignment="Center">
+                    <DatePicker x:Name="datePick" SelectedDateChanged="datePick_SelectedDateChanged"/>
+                </StackPanel>
                 <!-- 工单 -->
-                <StackPanel Margin="50,0,10,0">
+                <StackPanel Margin="10,5">
                     <TextBlock Text="工单" Margin="0 0 0 2"/>
                     <ComboBox x:Name="mo" Width="120" Height="26" FontSize="14"
                             BorderBrush="#FFCCCCCC" SelectedIndex="0"
@@ -55,13 +58,10 @@
                 <StackPanel Margin="10,0">
                     <TextBlock Text="班组" Margin="0 0 0 2"/>
                     <ComboBox x:Name="team" Width="100" Height="26" FontSize="14"
-                                  BorderBrush="#FFCCCCFF" SelectedIndex="0" ItemsSource="{Binding Teams}">
-                    </ComboBox>
+                                  BorderBrush="#FFCCCCFF" SelectedIndex="0" ItemsSource="{Binding Teams}"/>
                 </StackPanel>
 
-                <StackPanel Margin="10,5" VerticalAlignment="Center">
-                    <DatePicker x:Name="datePick" />
-                </StackPanel>
+                
                 <!-- 查询按钮 -->
                 <Button Content="查询" Margin="20,0,0,0" Padding="20,5"
                             Background="#FFCCCCCC" Foreground="White"
@@ -125,7 +125,7 @@
                 SelectionUnit="FullRow"
                 RowHeight="25"
                 FontSize="15"
-                ItemsSource="{Binding RateList}"
+                ItemsSource="{Binding SourceList}"
                 SelectedItem="{Binding RateListSingle}"
                 Margin="0,0,0,0">
                         <!-- 移除底部margin -->
@@ -139,13 +139,40 @@
                         </DataGrid.Resources>
 
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="机型" Binding="{Binding prod_type}" Width="Auto"/>
-                            <DataGridTextColumn Header="模组" Binding="{Binding process_grp_curr}" Width="Auto"/>
-                            <DataGridTextColumn Header="工艺" Binding="{Binding model_curr}" Width="Auto"/>
-                            <DataGridTextColumn Header="站点" Binding="{Binding station_curr}" Width="Auto"/>
-                            <DataGridTextColumn Header="工单" Binding="{Binding mo}" Width="Auto"/>
-                            <DataGridTextColumn Header="班组" Binding="{Binding prod_team}" Width="Auto"/>
-                            <DataGridTextColumn Header="直通率" Binding="{Binding pass_rate}" Width="Auto"/>
+                            <DataGridTextColumn Header="月份" Binding="{Binding Month}" Width="Auto"/>
+                            <DataGridTextColumn Header="周别" Binding="{Binding Week}" Width="Auto"/>
+                            <DataGridTextColumn Header="日期" Binding="{Binding Date}" Width="Auto"/>
+                            <DataGridTextColumn Header="线体" Binding="{Binding Line}" Width="Auto"/>
+                            <DataGridTextColumn Header="IPQC" Binding="{Binding IPQC}" Width="Auto"/>
+                            <DataGridTextColumn Header="PQE" Binding="{Binding PQE}" Width="Auto"/>
+                            <DataGridTextColumn Header="制令号" Binding="{Binding Monumber}" Width="Auto"/>
+                            <DataGridTextColumn Header="状态" Binding="{Binding Status}" Width="Auto"/>
+                            <DataGridTextColumn Header="机型" Binding="{Binding MachineKind}" Width="Auto"/>
+                            <DataGridTextColumn Header="版型" Binding="{Binding Version}" Width="Auto"/>
+                            <DataGridTextColumn Header="直通率目标" Binding="{Binding TargetRate}" Width="Auto"/>
+                            <DataGridTextColumn Header="产品直通率" Binding="{Binding pass_rate}" Width="Auto"/>
+                            <DataGridTextColumn Header="检验数" Binding="{Binding CheckCount}" Width="Auto"/>
+                            <DataGridTextColumn Header="合格数" Binding="{Binding CosmeticPassCount}" Width="Auto"/>
+                            <DataGridTextColumn Header="性能不良数" Binding="{Binding ErrorCount}" Width="Auto"/>
+                            <DataGridTextColumn Header="外观不良数" Binding="{Binding CosmeticErrorCount}" Width="Auto"/>
+                            <DataGridTextColumn Header="TOP1（性能）" Binding="{Binding Top1Capcity}" Width="Auto"/>
+                            <DataGridTextColumn Header="修理原因" Binding="{Binding RepairReason1}" Width="Auto"/>
+                            <DataGridTextColumn Header="数量" Binding="{Binding Count1}" Width="Auto"/>
+                            <DataGridTextColumn Header="TOP2（性能）" Binding="{Binding Top2Capcity}" Width="Auto"/>
+                            <DataGridTextColumn Header="修理原因" Binding="{Binding RepairReason2}" Width="Auto"/>
+                            <DataGridTextColumn Header="数量" Binding="{Binding Count2}" Width="Auto"/>
+                            <DataGridTextColumn Header="TOP3（性能）" Binding="{Binding Top3Capcity}" Width="Auto"/>
+                            <DataGridTextColumn Header="修理原因" Binding="{Binding RepairReason3}" Width="Auto"/>
+                            <DataGridTextColumn Header="数量" Binding="{Binding Count3}" Width="Auto"/>
+                            <DataGridTextColumn Header="TOP1（外观）" Binding="{Binding Top1Surface}" Width="Auto"/>
+                            <DataGridTextColumn Header="修理原因" Binding="{Binding RepairReason_1}" Width="Auto"/>
+                            <DataGridTextColumn Header="数量" Binding="{Binding Count_1}" Width="Auto"/>
+                            <DataGridTextColumn Header="TOP2（外观）" Binding="{Binding Top2Surface}" Width="Auto"/>
+                            <DataGridTextColumn Header="修理原因" Binding="{Binding RepairReason_2}" Width="Auto"/>
+                            <DataGridTextColumn Header="数量" Binding="{Binding Count_2}" Width="Auto"/>
+                            <DataGridTextColumn Header="TOP3（外观）" Binding="{Binding Top3Surface}" Width="Auto"/>
+                            <DataGridTextColumn Header="修理原因" Binding="{Binding RepairReason_3}" Width="Auto"/>
+                            <DataGridTextColumn Header="数量" Binding="{Binding Count_3}" Width="Auto"/>
                         </DataGrid.Columns>
                     </DataGrid>
                 </ScrollViewer>
@@ -153,7 +180,7 @@
 
             <Border Grid.Column="1" Margin="10,0,0,0" VerticalAlignment="Bottom" Background="White"
 BorderBrush="#FFCCCCCC" BorderThickness="1" Height="62">
-                <Label Name="lbl_warning"  Content="正在查询，请勿重复点击!" HorizontalAlignment="Center" VerticalAlignment="Center" Width="200" Height="30" FontWeight="Bold" Foreground="Red"/>
+                <Label Name="lbl_warning"  Content="正在查询，请勿重复点击!" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="300,0,0,0" Width="200" Height="30" FontWeight="Bold" Foreground="Red"/>
 
             </Border>
         </Grid>
