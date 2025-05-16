@@ -238,8 +238,36 @@ namespace synthesis_program.Service
 
                     var errorItem = await sqlServerDb.Ado.SqlQueryAsync<InterimModel>(sqlError, parameters.ToArray()).ConfigureAwait(false);
 
-                    string sqlCount = $@"select COUNT(t.err_code) from prod_test_rcds t {whereClause} and t.err_code not like 'U1%' UNION ALL
-select COUNT(t.err_code) from prod_test_rcds t {whereClause} and t.err_code like 'U1%'";
+                    string sqlCount = $@"(SELECT 
+                                          COUNT(ranked.err_code) AS total_count
+                                        FROM (
+                                          SELECT 
+                                            sn,
+                                            err_code,
+                                            -- 为每个 SN 按时间倒序生成行号，取最新记录
+                                            ROW_NUMBER() OVER (PARTITION BY sn ORDER BY finished_stamp DESC) AS rn
+                                          FROM prod_test_rcds t
+                                          {whereClause}
+                                            and t.station_curr not IN ('00CF098')
+                                        ) AS ranked
+                                        WHERE 
+                                          ranked.rn = 1               -- 只保留每个 SN 的最新记录
+                                          AND ranked.err_code not like 'U1%') -- 排除 err_code 为 NULL 的记录
+                                        UNION ALL
+                                        (SELECT 
+                                          COUNT(ranked.err_code) AS total_count
+                                        FROM (
+                                          SELECT 
+                                            sn,
+                                            err_code,
+                                            ROW_NUMBER() OVER (PARTITION BY sn ORDER BY finished_stamp DESC) AS rn
+                                          FROM prod_test_rcds t
+                                          {whereClause}
+                                            and t.station_curr not IN ('00CF098')
+                                        ) AS ranked
+                                        WHERE 
+                                          ranked.rn = 1               
+                                          AND ranked.err_code like 'U1%')";
                     var dtCount = await sqlServerDb.Ado.GetDataTableAsync(sqlCount, parameters.ToArray()).ConfigureAwait(false);
 
                     {
