@@ -152,7 +152,7 @@
                             <DataGridTextColumn Header="直通率目标" Binding="{Binding TargetRate}" Width="Auto"/>
                             <DataGridTextColumn Header="产品直通率" Binding="{Binding pass_rate}" Width="Auto"/>
                             <DataGridTextColumn Header="检验数" Binding="{Binding CheckCount}" Width="Auto"/>
-                            <DataGridTextColumn Header="合格数" Binding="{Binding CosmeticPassCount}" Width="Auto"/>
+                            <DataGridTextColumn Header="外观合格数" Binding="{Binding CosmeticPassCount}" Width="Auto"/>
                             <DataGridTextColumn Header="性能不良数" Binding="{Binding ErrorCount}" Width="Auto"/>
                             <DataGridTextColumn Header="外观不良数" Binding="{Binding CosmeticErrorCount}" Width="Auto"/>
                             <DataGridTextColumn Header="TOP1（性能）" Binding="{Binding Top1Capcity}" Width="Auto"/>

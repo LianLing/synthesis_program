@@ -206,13 +206,19 @@ namespace synthesis_program.Service
                     //TOP1-3不良
                     string sqlError = $@"(SELECT '性能不良' value1,
                                       s.`name` value2,
-                                      count(t.err_code) value3
+                                      count(distinct t.sn) value3
                                     FROM
                                       prod_test_rcds t,
                                       hts_pcs.prod_err_code2 s
                                     {whereClause}
                                       and t.err_code = s.`code`
                                       and t.err_code not like 'U1%'
+                                      AND EXISTS (
+                                        SELECT 1 
+                                        FROM prod_test_rcds t2 
+                                        WHERE t2.sn = t.sn 
+                                          AND t2.station_curr = '00CF098' 
+                                      )
                                     GROUP BY
                                       s.`name`
                                     ORDER BY
@@ -223,13 +229,19 @@ namespace synthesis_program.Service
   
                                       (SELECT '外观不良' value1,
                                       s.`name` value2,
-                                      count(t.err_code) value3
+                                      count(distinct t.sn) value3
                                     FROM
                                       prod_test_rcds t,
                                       hts_pcs.prod_err_code2 s
                                     {whereClause}
                                       and t.err_code = s.`code`
                                       and t.err_code like 'U1%'
+                                      AND EXISTS (
+                                        SELECT 1 
+                                        FROM prod_test_rcds t2 
+                                        WHERE t2.sn = t.sn   
+                                          AND t2.station_curr = '00CF098'  
+                                      )
                                     GROUP BY
                                       s.`name`
                                     ORDER BY
@@ -238,23 +250,8 @@ namespace synthesis_program.Service
 
                     var errorItem = await sqlServerDb.Ado.SqlQueryAsync<InterimModel>(sqlError, parameters.ToArray()).ConfigureAwait(false);
 
-                    string sqlCount = $@"(SELECT 
-                                          COUNT(ranked.err_code) AS total_count
-                                        FROM (
-                                          SELECT 
-                                            sn,
-                                            err_code,
-                                            -- 为每个 SN 按时间倒序生成行号，取最新记录
-                                            ROW_NUMBER() OVER (PARTITION BY sn ORDER BY finished_stamp DESC) AS rn
-                                          FROM prod_test_rcds t
-                                          {whereClause}
-                                            and t.station_curr not IN ('00CF098')
-                                        ) AS ranked
-                                        WHERE 
-                                          ranked.rn = 1               -- 只保留每个 SN 的最新记录
-                                          AND ranked.err_code not like 'U1%') -- 排除 err_code 为 NULL 的记录
-                                        UNION ALL
-                                        (SELECT 
+                    //查询性能不良数和外观不良数
+                    string sqlCount = $@"SELECT 
                                           COUNT(ranked.err_code) AS total_count
                                         FROM (
                                           SELECT 
@@ -263,17 +260,25 @@ namespace synthesis_program.Service
                                             ROW_NUMBER() OVER (PARTITION BY sn ORDER BY finished_stamp DESC) AS rn
                                           FROM prod_test_rcds t
                                           {whereClause}
-                                            and t.station_curr not IN ('00CF098')
+                                            AND EXISTS (
+                                        SELECT 1 
+                                        FROM prod_test_rcds t2 
+                                        WHERE t2.sn = t.sn   
+                                          AND t2.station_curr = '00CF098'  
+                                      )
                                         ) AS ranked
                                         WHERE 
                                           ranked.rn = 1               
-                                          AND ranked.err_code like 'U1%')";
+                                          AND ranked.err_code like 'U1%'";
                     var dtCount = await sqlServerDb.Ado.GetDataTableAsync(sqlCount, parameters.ToArray()).ConfigureAwait(false);
 
+                    //查询外观合格数
+                    string sqlPass = $@"";
+
                     {
-                        productPassRateViewModel.Month = ((Month)(DateTime.Now.Month)).ToString();
-                        productPassRateViewModel.Week = GetCurrentWeekNumber().ToString();
-                        productPassRateViewModel.Date = DateTime.Now.Date.ToString("MM/dd");
+                        productPassRateViewModel.Month = ((Month)(passRateModel.finished_stamp.ObjToDate().Month)).ToString();
+                        productPassRateViewModel.Week = GetCurrentWeekNumber(passRateModel.finished_stamp.ObjToDate()).ToString();
+                        productPassRateViewModel.Date = passRateModel.finished_stamp.ObjToDate().ToString("MM/dd");
                         //productPassRateViewModel.Line = ;
                         productPassRateViewModel.Monumber = passRateModel.mo;
                         productPassRateViewModel.MachineKind = prod_type;
@@ -283,8 +288,8 @@ namespace synthesis_program.Service
                         
                         if (dtCount.Rows.Count> 0)
                         {
-                            productPassRateViewModel.ErrorCount = dtCount.Rows[0][0].ObjToInt();
-                            productPassRateViewModel.CosmeticErrorCount = dtCount.Rows[1][0].ObjToInt();
+                            productPassRateViewModel.CosmeticErrorCount = dtCount.Rows[0][0].ObjToInt();
+                            productPassRateViewModel.ErrorCount = allQuantity - passOK - productPassRateViewModel.CosmeticErrorCount;
                         }
 
                         if (errorItem.Count > 0)
@@ -353,9 +358,8 @@ namespace synthesis_program.Service
             Dec = 12
         }
 
-        public int GetCurrentWeekNumber()
+        public int GetCurrentWeekNumber(DateTime date)
         {
-            DateTime date = DateTime.Now;
             CultureInfo culture = CultureInfo.InvariantCulture; // 使用固定文化避免区域设置影响
             Calendar calendar = culture.Calendar;
             // ISO 8601规则：第一周至少有4天，且一周从周一开始
