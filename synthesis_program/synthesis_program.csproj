@@ -139,6 +139,9 @@
     <Compile Include="Views\ProductPassRate.xaml.cs">
       <DependentUpon>ProductPassRate.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Views\ProductRecordPage.xaml.cs">
+      <DependentUpon>ProductRecordPage.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Views\SaveRecordPage.xaml.cs">
       <DependentUpon>SaveRecordPage.xaml</DependentUpon>
     </Compile>
@@ -163,6 +166,10 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="Views\ProductPassRate.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\ProductRecordPage.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

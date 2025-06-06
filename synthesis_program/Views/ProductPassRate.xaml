@@ -50,7 +50,7 @@
                     <ComboBox x:Name="mo" Width="120" Height="26" FontSize="14"
                             BorderBrush="#FFCCCCCC" SelectedIndex="0"
                             IsEditable="True"
-                            ItemsSource="{Binding AllMo}" Loaded="mo_Loaded">
+                            ItemsSource="{Binding AllMo}" Loaded="mo_Loaded" SelectionChanged="mo_SelectionChanged">
                     </ComboBox>
                 </StackPanel>
 
@@ -67,6 +67,8 @@
                             Background="#FFCCCCCC" Foreground="White"
                             FontWeight="Bold" Click="QueryButton_Click" Height="35"/>
 
+                
+
                 <Button Content="导出" Margin="30,0,0,0" Padding="20,5"
                             Background="#FFCCCCCC" Foreground="White"
                             FontWeight="Bold" Click="ExportButton_Click" Height="35"/>
@@ -76,7 +78,7 @@
         <!-- 主内容区域 -->
         <Grid Grid.Row="1" Margin="0,10,0,0">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="200"/>
+                <ColumnDefinition Width="250"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 

@@ -17,6 +17,7 @@
             </MenuItem>
             <MenuItem Header="报表" Height="26" Width="60" Margin="3,0" >
                 <MenuItem Header="直通率" Click="QueryRecords_Click"/>
+                <MenuItem Header="生产编号记录" Click="ProductRecords_Click"/>
             </MenuItem>
         </Menu>
 

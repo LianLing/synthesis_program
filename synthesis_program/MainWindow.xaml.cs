@@ -91,5 +91,11 @@ namespace synthesis_program.Views
             WindowState = WindowState.Maximized;          // 最大化窗口
             mainFrame.Navigate(new ProductPassRate());
         }
+
+        private void ProductRecords_Click(object sender, RoutedEventArgs e)
+        {
+            WindowState = WindowState.Maximized;          // 最大化窗口
+            mainFrame.Navigate(new ProductRecordPage());
+        }
     }
 }

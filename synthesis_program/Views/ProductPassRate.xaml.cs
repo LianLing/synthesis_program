@@ -16,6 +16,7 @@ using System;
 using static HtsCommon.DBMySql8.HtsDB;
 using System.Windows.Threading;
 using synthesis_program.ViewModels;
+using SqlSugar;
 
 namespace synthesis_program.Views
 {
@@ -95,7 +96,7 @@ namespace synthesis_program.Views
             lbl_warning.Visibility = Visibility.Visible;
             string stationstr = "(";
             var selectedStations = Stations.Where(s => s.IsChecked)
-                                           .Select(s => s.Name)
+                                           .Select(s => s.Name.Substring(s.Name.LastIndexOf(' ')+1))
                                            .ToList();
             if (selectedStations.Count == 0)
             {
@@ -117,7 +118,7 @@ namespace synthesis_program.Views
                 process_grp_curr = prod_module.SelectedItem?.ToString(),
                 model_curr = prod_model.SelectedItem?.ToString(),
                 mo = mo.SelectedItem?.ToString(),
-                finished_stamp = datePick.SelectedDate,
+                finished_stamp = datePick.SelectedDate?.ObjToDate(),
                 prod_team = team.SelectedItem?.ToString(),
                 station_curr = stationstr,
                 pass_rate = "0"
@@ -228,7 +229,7 @@ namespace synthesis_program.Views
                 foreach (var module in result)
                 {
                     CheckBoxItem checkBoxItem = new CheckBoxItem();
-                    checkBoxItem.Name = module;
+                    checkBoxItem.Name = module.value2 + " " + module.value1;
                     Stations.Add(checkBoxItem);
                 }
 
@@ -421,5 +422,12 @@ namespace synthesis_program.Views
             public string Name { get; set; }
             public bool IsChecked { get; set; }
         }
+
+        private async void mo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            //选择工单带出线别
+            //await tableService.GetLineByMo(prod_type.SelectedItem.ToString(), mo.SelectedItem.ToString());
+        }
+
     }
 }

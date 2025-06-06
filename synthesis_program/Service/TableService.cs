@@ -65,12 +65,24 @@ namespace synthesis_program.Service
             }
         }
 
-        public List<string> QueryStations(string machineKind,string module,string process)
+        public List<InterimModel> QueryStations(string machineKind,string module,string process)
         {
             try
             {
-                string sql = $@"SELECT distinct t.prod_station FROM hts_pcs.vw_eq_cfg_stn_distribute t WHERE t.prod_type = @prod_type AND t.prod_module  = @prod_module AND t.prod_model = @prod_model AND next_cond >= 0";
-                return _db.Instance.Ado.SqlQuery<string>(sql, new { prod_type = machineKind, prod_module = module, prod_model = process }).ToList();
+                //string sql = $@"SELECT distinct t.prod_station FROM hts_pcs.vw_eq_cfg_stn_distribute t WHERE t.prod_type = @prod_type AND t.prod_module  = @prod_module AND t.prod_model = @prod_model AND next_cond >= 0";
+                string sql = $@"SELECT DISTINCT
+                                      t.prod_station value1,
+                                      s.`name` value2
+                                    FROM
+                                      hts_pcs.vw_eq_cfg_stn_distribute t,
+                                      hts_pcs.prod_station s
+                                    WHERE
+                                      t.prod_station = s.`code`
+                                      AND t.prod_type = @prod_type
+                                      AND t.prod_module = @prod_module
+                                      AND t.prod_model = @prod_model
+                                      AND next_cond >= 0";
+                return _db.Instance.Ado.SqlQuery<InterimModel>(sql, new { prod_type = machineKind, prod_module = module, prod_model = process }).ToList();
             }
             catch (Exception)
             {
@@ -141,6 +153,8 @@ namespace synthesis_program.Service
             try
             {
                 string database = "hts_prod_" + passRateModel.prod_type;
+                int CosmeticNoPassCount = 0;    //外观不良数
+                int PerformNoPassCount = 0;     //性能不良数
                 ProductPassRateViewModel productPassRateViewModel = new ProductPassRateViewModel();
                 var sqlServerConfig = new ConnectionConfig()
                 {
@@ -154,12 +168,14 @@ namespace synthesis_program.Service
                 {
                     // 构建基础查询条件
                     var conditions = new List<string>();
+                    if (!string.IsNullOrEmpty(passRateModel.prod_type))
+                        conditions.Add($@"t.prod_type = @Prod_type");
                     if (!string.IsNullOrEmpty(passRateModel.prod_team))
                         conditions.Add($@"t.prod_team = @ProdTeam");
                     if (!string.IsNullOrEmpty(passRateModel.mo))
                         conditions.Add($@"t.mo = @Mo");
                     if (passRateModel.finished_stamp != null)
-                        conditions.Add($@"DATE_FORMAT(t.finished_stamp,'%Y-%m-%d') = DATE_FORMAT(@FinishedStamp,'%Y-%m-%d')");
+                        conditions.Add($@"t.finished_stamp BETWEEN @StartTime AND @EndTime");
                     if (!string.IsNullOrEmpty(passRateModel.station_curr))
                         conditions.Add($@"t.station_curr in {passRateModel.station_curr}");
 
@@ -168,168 +184,169 @@ namespace synthesis_program.Service
                     // 创建参数化查询
                     var parameters = new List<SugarParameter>
                     {
+                        new SugarParameter("@Prod_type",passRateModel.prod_type),
                         new SugarParameter("@ProdTeam", passRateModel.prod_team),
                         new SugarParameter("@Mo", passRateModel.mo),
-                        new SugarParameter("@FinishedStamp", passRateModel.finished_stamp)
+                        new SugarParameter("@StartTime", passRateModel.finished_stamp.ObjToDate().ToString("yyyy-MM-dd 00:00:00")),
+                        new SugarParameter("@EndTime", passRateModel.finished_stamp.ObjToDate().ToString("yyyy-MM-dd 23:59:59"))
                     };
+                    /*
+                     * 检验数 = 外观合格数 + 外观/性能不良数
+                     * 直通率 = 外观合格数 / 检验数
+                     */
 
-                    // 查询总数量
-                    string countSql = $@"SELECT COUNT(1) FROM (SELECT DISTINCT t.sn FROM prod_test_rcds t {whereClause}) s";
-                    int allQuantity = await sqlServerDb.Ado.GetIntAsync(countSql, parameters.ToArray()).ConfigureAwait(false);
-                    int passOK = 0;
-                    if (allQuantity > 0)
-                    {
-                        // 一次性查询所有SN的通过情况
-                        string passRateSql = $@"
-                    SELECT 
-                        sn,
-                        SUM(CASE WHEN t.`status` = 1 AND t.tst_rlt >= 0 THEN 1 ELSE 0 END) AS PassCount,
-                        COUNT(1) AS TotalCount
-                    FROM prod_test_rcds t
-                    {whereClause}
-                    AND t.model_curr = @ModelCurr
-                    GROUP BY sn
-                    HAVING COUNT(1) = SUM(CASE WHEN t.`status` = 1 AND t.tst_rlt >= 0 THEN 1 ELSE 0 END)";
+                    // 查询当天外观合格数
+                    string sqlCosmeticPassCount = $@"SELECT
+                                                      COUNT(DISTINCT t.sn)
+                                                    FROM
+                                                      prod_test_rcds t,
+                                                      hts_pcs.vw_eq_cfg_stn_distribute s
+                                                      {whereClause}
+                                                      AND t.station_curr = s.prod_station
+                                                      AND s.`S.name` like '%外观%'
+                                                      AND t.err_code = '0000'
+                                                      AND NOT EXISTS (SELECT 1 FROM prod_test_rcds t2 WHERE t2.sn = t.sn AND t2.station_curr = '00CF098')";
+                    int CosmeticPassCount = await sqlServerDb.Ado.GetIntAsync(sqlCosmeticPassCount, parameters.ToArray()).ConfigureAwait(false);
+                    //if (CosmeticPassCount > 0)
+                    //{
+                        //查询外观/性能不良数
+                        //TOP1-3不良
+                        string sqlError = $@"(SELECT '性能不良' AS value1,
+                                                    ec.`name` AS value2,
+                                                    COUNT(DISTINCT t.sn) AS value3,
+                                                    rc.cause_c value4
+                                                FROM 
+                                                    prod_test_rcds t
+                                                    INNER JOIN hts_pcs.prod_err_code2 ec ON t.err_code = ec.`code` AND t.err_code NOT LIKE 'U1%'
+                                                    INNER JOIN prod_repair rep ON t.sn = rep.sn 
+                                                    INNER JOIN hts_pcs.prod_rep_code rc ON rep.rep_code = rc.`code`
+                                                {whereClause} 
+                                                    AND EXISTS (
+                                                        SELECT 1 
+                                                        FROM prod_test_rcds t2 
+                                                        WHERE t2.sn = t.sn 
+                                                            AND t2.station_curr = '00CF098'
+                                                        LIMIT 1  
+                                                    )
+                                                    AND NOT EXISTS (
+                                                        SELECT 1 
+                                                        FROM prod_repair t3 
+                                                        WHERE t.sn = t3.sn 
+                                                            AND t3.rep_code = 'P-OK'
+                                                        LIMIT 1  
+                                                    )
+                                                GROUP BY 
+                                                    ec.`name`, rc.cause_c
+                                                ORDER BY 
+                                                    value3 DESC
+                                                    LIMIT 3
+                                                    )
+                                                    UNION ALL
+                                                    (
+                                                    SELECT 
+                                                    '外观不良' AS value1,
+                                                    ec.`name` AS value2,
+                                                    COUNT(DISTINCT t.sn) AS value3,
+                                                    rc.cause_c value4
+                                                FROM 
+                                                    prod_test_rcds t
+                                                    INNER JOIN hts_pcs.prod_err_code2 ec ON t.err_code = ec.`code` AND t.err_code LIKE 'U1%'
+                                                    INNER JOIN prod_repair rep ON t.sn = rep.sn 
+                                                    INNER JOIN hts_pcs.prod_rep_code rc ON rep.rep_code = rc.`code`
+                                                {whereClause} 
+                                                    AND EXISTS (
+                                                        SELECT 1 
+                                                        FROM prod_test_rcds t2 
+                                                        WHERE t2.sn = t.sn 
+                                                            AND t2.station_curr = '00CF098'
+                                                        LIMIT 1  
+                                                    )
+                                                    AND NOT EXISTS (
+                                                        SELECT 1 
+                                                        FROM prod_repair t3 
+                                                        WHERE t.sn = t3.sn 
+                                                            AND t3.rep_code = 'P-OK'
+                                                        LIMIT 1  
+                                                    )
+                                                GROUP BY 
+                                                    ec.`name`, rc.cause_c
+                                                ORDER BY 
+                                                    value3 DESC
+                                                    LIMIT 3
+                                                    )";
 
-                        parameters.Add(new SugarParameter("@ModelCurr", passRateModel.model_curr));
-                        var passSns = await sqlServerDb.Ado.SqlQueryAsync<dynamic>(passRateSql, parameters.ToArray()).ConfigureAwait(false);
+                        var errorItem = await sqlServerDb.Ado.SqlQueryAsync<InterimModel>(sqlError, parameters.ToArray()).ConfigureAwait(false);
 
-                        passOK = passSns.Count;
-                        passRateModel.pass_rate = (passOK * 100.0 / allQuantity).ToString("0") + '%';
-                    }
-                    else
-                    {
-                        passRateModel.pass_rate = "0%";
-                    }
+                        if (errorItem.Count > 0)
+                        {
+                            int count1 = errorItem.FindAll(p => p.value1 == "性能不良").Count();
+                            if (count1 > 0)
+                            {
+                                productPassRateViewModel.Top1Capcity = errorItem[0].value2;
+                                productPassRateViewModel.RepairReason1 = errorItem[0].value4;
+                                productPassRateViewModel.Count1 = errorItem[0].value3;
+                                PerformNoPassCount += Convert.ToInt32(errorItem[0].value3);
+                            }
+                            if (count1 > 1)
+                            {
+                                productPassRateViewModel.Top2Capcity = errorItem[1].value2;
+                                productPassRateViewModel.RepairReason2 = errorItem[0].value4;
+                                productPassRateViewModel.Count2 = errorItem[1].value3;
+                                PerformNoPassCount += Convert.ToInt32(errorItem[1].value3);
+                            }
+                            if (count1 > 2)
+                            {
+                                productPassRateViewModel.Top3Capcity = errorItem[2].value2;
+                                productPassRateViewModel.RepairReason3 = errorItem[0].value4;
+                                productPassRateViewModel.Count3 = errorItem[2].value3;
+                                PerformNoPassCount += Convert.ToInt32(errorItem[2].value3);
+                            }
 
-                    //查询所有列数据
-                    //TOP1-3不良
-                    string sqlError = $@"(SELECT '性能不良' value1,
-                                      s.`name` value2,
-                                      count(distinct t.sn) value3
-                                    FROM
-                                      prod_test_rcds t,
-                                      hts_pcs.prod_err_code2 s
-                                    {whereClause}
-                                      and t.err_code = s.`code`
-                                      and t.err_code not like 'U1%'
-                                      AND EXISTS (
-                                        SELECT 1 
-                                        FROM prod_test_rcds t2 
-                                        WHERE t2.sn = t.sn 
-                                          AND t2.station_curr = '00CF098' 
-                                      )
-                                    GROUP BY
-                                      s.`name`
-                                    ORDER BY
-                                      count(t.err_code) DESC
-                                      LIMIT 3)
-  
-                                      UNION ALL
-  
-                                      (SELECT '外观不良' value1,
-                                      s.`name` value2,
-                                      count(distinct t.sn) value3
-                                    FROM
-                                      prod_test_rcds t,
-                                      hts_pcs.prod_err_code2 s
-                                    {whereClause}
-                                      and t.err_code = s.`code`
-                                      and t.err_code like 'U1%'
-                                      AND EXISTS (
-                                        SELECT 1 
-                                        FROM prod_test_rcds t2 
-                                        WHERE t2.sn = t.sn   
-                                          AND t2.station_curr = '00CF098'  
-                                      )
-                                    GROUP BY
-                                      s.`name`
-                                    ORDER BY
-                                      count(t.err_code) DESC
-                                      LIMIT 3)";
+                            int count2 = errorItem.FindAll(p => p.value1 == "外观不良").Count();
+                            if (count2 > 0)
+                            {
+                                productPassRateViewModel.Top1Surface = errorItem[count1 + 0].value2;
+                                productPassRateViewModel.RepairReason_1 = errorItem[0].value4;
+                                productPassRateViewModel.Count_1 = errorItem[count1 + 0].value3;
+                                CosmeticNoPassCount += Convert.ToInt32(errorItem[count1 + 0].value3);
+                            }
+                            if (count2 > 1)
+                            {
+                                productPassRateViewModel.Top2Surface = errorItem[count1 + 1].value2;
+                                productPassRateViewModel.RepairReason_2 = errorItem[0].value4;
+                                productPassRateViewModel.Count_2 = errorItem[count1 + 1].value3;
+                                CosmeticNoPassCount += Convert.ToInt32(errorItem[count1 + 1].value3);
+                            }
+                            if (count2 > 2)
+                            {
+                                productPassRateViewModel.Top3Surface = errorItem[count1 + 2].value2;
+                                productPassRateViewModel.RepairReason_3 = errorItem[0].value4;
+                                productPassRateViewModel.Count_3 = errorItem[count1 + 2].value3;
+                                CosmeticNoPassCount += Convert.ToInt32(errorItem[count1 + 2].value3);
+                            }
 
-                    var errorItem = await sqlServerDb.Ado.SqlQueryAsync<InterimModel>(sqlError, parameters.ToArray()).ConfigureAwait(false);
+                        }
+                        productPassRateViewModel.CheckCount = CosmeticPassCount + CosmeticNoPassCount + PerformNoPassCount;
+                        passRateModel.pass_rate = (CosmeticPassCount * 100.0 / productPassRateViewModel.CheckCount).ToString("0") + '%';
+                    //}
+                    //else
+                    //{
+                    //    passRateModel.pass_rate = "0%";
+                    //}
 
-                    //查询性能不良数和外观不良数
-                    string sqlCount = $@"SELECT 
-                                          COUNT(ranked.err_code) AS total_count
-                                        FROM (
-                                          SELECT 
-                                            sn,
-                                            err_code,
-                                            ROW_NUMBER() OVER (PARTITION BY sn ORDER BY finished_stamp DESC) AS rn
-                                          FROM prod_test_rcds t
-                                          {whereClause}
-                                            AND EXISTS (
-                                        SELECT 1 
-                                        FROM prod_test_rcds t2 
-                                        WHERE t2.sn = t.sn   
-                                          AND t2.station_curr = '00CF098'  
-                                      )
-                                        ) AS ranked
-                                        WHERE 
-                                          ranked.rn = 1               
-                                          AND ranked.err_code like 'U1%'";
-                    var dtCount = await sqlServerDb.Ado.GetDataTableAsync(sqlCount, parameters.ToArray()).ConfigureAwait(false);
-
-                    //查询外观合格数
+                    
                     string sqlPass = $@"";
 
                     {
                         productPassRateViewModel.Month = ((Month)(passRateModel.finished_stamp.ObjToDate().Month)).ToString();
                         productPassRateViewModel.Week = GetCurrentWeekNumber(passRateModel.finished_stamp.ObjToDate()).ToString();
                         productPassRateViewModel.Date = passRateModel.finished_stamp.ObjToDate().ToString("MM/dd");
-                        //productPassRateViewModel.Line = ;
                         productPassRateViewModel.Monumber = passRateModel.mo;
                         productPassRateViewModel.MachineKind = prod_type;
                         productPassRateViewModel.pass_rate = passRateModel.pass_rate;
-                        productPassRateViewModel.CheckCount = allQuantity;
-                        productPassRateViewModel.CosmeticPassCount = passOK;
-                        
-                        if (dtCount.Rows.Count> 0)
-                        {
-                            productPassRateViewModel.CosmeticErrorCount = dtCount.Rows[0][0].ObjToInt();
-                            productPassRateViewModel.ErrorCount = allQuantity - passOK - productPassRateViewModel.CosmeticErrorCount;
-                        }
-
-                        if (errorItem.Count > 0)
-                        {
-                            int count1 = errorItem.FindAll(p => p.value1 == "性能不良").Count();
-                            if(count1 > 0)
-                            {
-                                productPassRateViewModel.Top1Capcity = errorItem[0].value2;
-                                productPassRateViewModel.Count1 = errorItem[0].value3;
-                            }
-                             if(count1 > 1)
-                            {
-                                productPassRateViewModel.Top2Capcity = errorItem[1].value2;
-                                productPassRateViewModel.Count2 = errorItem[1].value3;
-                            }
-                            if(count1 > 2)
-                            {
-                                productPassRateViewModel.Top3Capcity = errorItem[2].value2;
-                                productPassRateViewModel.Count3 = errorItem[2].value3;
-                            }
-
-                            int count2 = errorItem.FindAll(p => p.value1 == "外观不良").Count();
-                            if (count2 > 0)
-                            {
-                                productPassRateViewModel.Top1Surface = errorItem[count1+0].value2;
-                                productPassRateViewModel.Count_1 = errorItem[count1+0].value3;
-                            }
-                            if (count2 > 1)
-                            {
-                                productPassRateViewModel.Top2Surface = errorItem[count1+1].value2;
-                                productPassRateViewModel.Count_2 = errorItem[count1+1].value3;
-                            }
-                            if(count2 > 2)
-                            {
-                                productPassRateViewModel.Top3Surface = errorItem[count1 + 2].value2;
-                                productPassRateViewModel.Count_3 = errorItem[count1 + 2].value3;
-                            }
-
-
-                        }
+                        productPassRateViewModel.CosmeticPassCount = CosmeticPassCount;
+                        productPassRateViewModel.CosmeticErrorCount = CosmeticNoPassCount;
+                        productPassRateViewModel.ErrorCount = PerformNoPassCount;
                     }
                     return new List<ProductPassRateViewModel> { productPassRateViewModel };
                 }
@@ -381,5 +398,20 @@ namespace synthesis_program.Service
                 throw;
             }
         }
+
+        //public async Task<string> GetLineByMo(string type,string mo)
+        //{
+        //    try
+        //    {
+        //        string sql = $@"SELECT CONCAT(t.`code`,'   ' ,t.NAME) value FROM hts_pcs.prod_type t WHERE t.CODE > 'A001' ORDER BY t.code";
+        //        var dataTable = await _db.Instance.Ado.SqlQueryAsync<Prod_TypeModel>(sql).ConfigureAwait(false);
+        //        return dataTable;
+        //    }
+        //    catch (Exception)
+        //    {
+
+        //        throw;
+        //    }
+        //}
     }
 }
