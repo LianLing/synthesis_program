@@ -11,6 +11,9 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using synthesis_program.Views;
+using System.IO;
+using Path = System.IO.Path;
+using System.Linq;
 
 namespace synthesis_program.Views
 {
@@ -24,7 +27,63 @@ namespace synthesis_program.Views
         public MainWindow()
         {
             InitializeComponent();
+            //尝试控制菜单是否可用
+            ControlMenuItem();
+        }
 
+        private void ControlMenuItem()
+        {
+            string folderPath = AppDomain.CurrentDomain.BaseDirectory;
+
+            try
+            {
+                // 2. 获取所有txt文件
+                string txtFiles = Directory.GetFiles(folderPath, "ControlMenuItemConfig.txt").First();
+
+                // 检查是否找到文件
+                if (txtFiles.Length == 0)
+                {
+                    Console.WriteLine("文件夹中未找到txt文件");
+                    return;
+                }
+
+                // 3. 创建列表存储结果
+                List<string> fileContents = new List<string>();
+
+                // 4. 遍历并读取每个文件
+                
+                try
+                {
+                    // 使用StreamReader自动处理编码和资源释放
+                    using (StreamReader reader = new StreamReader(txtFiles, Encoding.UTF8))
+                    {
+                        string content = reader.ReadToEnd();
+                        fileContents.Add($"文件: {Path.GetFileName(txtFiles)}\n内容:\n{content}\n");
+                        switch (content)
+                        {
+                            case "ServiceTable":
+                                ServiceTable.IsEnabled = true;
+                                break;
+                            case "WholeThrouthRate":
+                                WholeThrouthRate.IsEnabled = true;
+                                break;
+                            case "RecordProductInfo":
+                                RecordProductInfo.IsEnabled = true;
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    fileContents.Add($"读取失败 {Path.GetFileName(txtFiles)}: {ex.Message}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"未知错误: {ex.Message}");
+            }
         }
 
         // 保存记录菜单点击事件
@@ -93,6 +152,22 @@ namespace synthesis_program.Views
         }
 
         private void ProductRecords_Click(object sender, RoutedEventArgs e)
+        {
+            WindowState = WindowState.Maximized;          // 最大化窗口
+            mainFrame.Navigate(new ProductRecordPage());
+        }
+
+        private void NSSMConfig_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void mainFrame_Navigated()
+        {
+
+        }
+
+        private void DirectConfig_Click(object sender, RoutedEventArgs e)
         {
             WindowState = WindowState.Maximized;          // 最大化窗口
             mainFrame.Navigate(new ProductRecordPage());

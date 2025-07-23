@@ -58,24 +58,22 @@ namespace synthesis_program.Views
             lbl_warning.Visibility = Visibility.Collapsed;
         }
 
-        private async Task InitializeModels()
+        private void InitializeModels()
         {
             // 初始化机型数据
-            var result = await tableService.QueryMachineKind();
-            await Task.Run(() =>
+            var result = tableService.QueryMachineKind();
+
+            foreach (var item in result)
             {
-                foreach (var item in result)
-                {
-                    machineKind.Add(item.name);
-                    allMachineKind.Add(item);
-                }
-            });
+                machineKind.Add(item.name);
+                allMachineKind.Add(item);
+            }
 
             ////初始化工单信息
             //var allMo = await tableService.QueryAllMoAsync(prod_type.SelectedItem.ToString());
             //forechAdd(allMo, AllMo);
             //初始化班组信息
-            var allTeam = await tableService.QueryAllTeam();
+            var allTeam = tableService.QueryAllTeam();
             Teams.Add("");
             foreach (var item in allTeam)
             {
@@ -94,6 +92,8 @@ namespace synthesis_program.Views
         private async void QueryButton_Click(object sender, RoutedEventArgs e)
         {
             lbl_warning.Visibility = Visibility.Visible;
+            lbl_warning.InvalidateVisual();             //强制刷新
+            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Background);
             string stationstr = "(";
             var selectedStations = Stations.Where(s => s.IsChecked)
                                            .Select(s => s.Name.Substring(s.Name.LastIndexOf(' ')+1))
@@ -125,13 +125,14 @@ namespace synthesis_program.Views
             };
 
             var list = await tableService.QueryPassRate(passRateModel, prod_type.SelectedItem.ToString());
-            await Task.Run(() =>
-            {
+            //await Task.Run(() =>
+            //{
                 foreach (var item in list)
                 {
-                    Application.Current.Dispatcher.Invoke(() => SourceList.Add(item));
+                //Application.Current.Dispatcher.Invoke(() => SourceList.Add(item));
+                SourceList.Add(item);
                 }
-            });
+            //});
             lbl_warning.Visibility = Visibility.Collapsed;
         }
 

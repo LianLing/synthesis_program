@@ -11,6 +11,7 @@ using synthesis_program.Models;
 using SqlSugar;
 using synthesis_program.ViewModels;
 using System.Globalization;
+using System.Collections.ObjectModel;
 
 namespace synthesis_program.Service
 {
@@ -21,12 +22,12 @@ namespace synthesis_program.Service
         public TableService() => _db = new DbContext();
         public void Dispose() => _db?.Dispose();
 
-        public async Task<List<Prod_TypeModel>> QueryMachineKind()
+        public List<Prod_TypeModel> QueryMachineKind()
         {
             try
             {
                 string sql = $@"SELECT t.`code`,t.name FROM hts_pcs.prod_type t WHERE t.CODE > 'A001' ORDER BY t.name";
-                var codes = await _db.Instance.Ado.SqlQueryAsync<Prod_TypeModel>(sql).ConfigureAwait(false);
+                var codes = _db.Instance.Ado.SqlQuery<Prod_TypeModel>(sql);
 
                 return codes;
             }
@@ -121,7 +122,7 @@ namespace synthesis_program.Service
             }
         }
 
-        public async Task<List<string>> QueryAllTeam()
+        public List<string> QueryAllTeam()
         {
             try
             {
@@ -135,7 +136,7 @@ namespace synthesis_program.Service
                 using (var sqlServerDb = new SqlSugarClient(sqlServerConfig))
                 {
                     string sql = $@"select t.TeamName from MES_PRODUCT_LINE t";
-                    var dt = await sqlServerDb.Ado.GetDataTableAsync(sql).ConfigureAwait(false);
+                    var dt = sqlServerDb.Ado.GetDataTable(sql);
                     return dt.Rows.Cast<DataRow>().Select(row => row[0].ToString()).ToList();
                 }
 
@@ -192,10 +193,10 @@ namespace synthesis_program.Service
                     };
                     /*
                      * 检验数 = 外观合格数 + 外观/性能不良数
-                     * 直通率 = 外观合格数 / 检验数
+                     * 直通率 = 外观合格数 / 外观合格数 + 性能/外观不良数
                      */
 
-                    // 查询当天外观合格数
+                    // 查询当天外观合格数 = 合格数 + 不合格但二次流水正常的数量
                     string sqlCosmeticPassCount = $@"SELECT
                                                       COUNT(DISTINCT t.sn)
                                                     FROM
@@ -205,7 +206,7 @@ namespace synthesis_program.Service
                                                       AND t.station_curr = s.prod_station
                                                       AND s.`S.name` like '%外观%'
                                                       AND t.err_code = '0000'
-                                                      AND NOT EXISTS (SELECT 1 FROM prod_test_rcds t2 WHERE t2.sn = t.sn AND t2.station_curr = '00CF098')";
+                                                      ##AND NOT EXISTS (SELECT 1 FROM prod_test_rcds t2 WHERE t2.sn = t.sn AND t2.station_curr = '00CF098')";
                     int CosmeticPassCount = await sqlServerDb.Ado.GetIntAsync(sqlCosmeticPassCount, parameters.ToArray()).ConfigureAwait(false);
                     //if (CosmeticPassCount > 0)
                     //{
@@ -219,7 +220,7 @@ namespace synthesis_program.Service
                                                     prod_test_rcds t
                                                     INNER JOIN hts_pcs.prod_err_code2 ec ON t.err_code = ec.`code` AND t.err_code NOT LIKE 'U1%'
                                                     INNER JOIN prod_repair rep ON t.sn = rep.sn 
-                                                    INNER JOIN hts_pcs.prod_rep_code rc ON rep.rep_code = rc.`code`
+                                                    INNER JOIN hts_pcs.prod_rep_code rc ON rep.rep_code = rc.`code` and rc.cause_c not like '%误测%'
                                                 {whereClause} 
                                                     AND EXISTS (
                                                         SELECT 1 
@@ -228,13 +229,7 @@ namespace synthesis_program.Service
                                                             AND t2.station_curr = '00CF098'
                                                         LIMIT 1  
                                                     )
-                                                    AND NOT EXISTS (
-                                                        SELECT 1 
-                                                        FROM prod_repair t3 
-                                                        WHERE t.sn = t3.sn 
-                                                            AND t3.rep_code = 'P-OK'
-                                                        LIMIT 1  
-                                                    )
+                                                    
                                                 GROUP BY 
                                                     ec.`name`, rc.cause_c
                                                 ORDER BY 
@@ -252,7 +247,7 @@ namespace synthesis_program.Service
                                                     prod_test_rcds t
                                                     INNER JOIN hts_pcs.prod_err_code2 ec ON t.err_code = ec.`code` AND t.err_code LIKE 'U1%'
                                                     INNER JOIN prod_repair rep ON t.sn = rep.sn 
-                                                    INNER JOIN hts_pcs.prod_rep_code rc ON rep.rep_code = rc.`code`
+                                                    INNER JOIN hts_pcs.prod_rep_code rc ON rep.rep_code = rc.`code` and rc.cause_c not like '%误测%'
                                                 {whereClause} 
                                                     AND EXISTS (
                                                         SELECT 1 
@@ -261,13 +256,7 @@ namespace synthesis_program.Service
                                                             AND t2.station_curr = '00CF098'
                                                         LIMIT 1  
                                                     )
-                                                    AND NOT EXISTS (
-                                                        SELECT 1 
-                                                        FROM prod_repair t3 
-                                                        WHERE t.sn = t3.sn 
-                                                            AND t3.rep_code = 'P-OK'
-                                                        LIMIT 1  
-                                                    )
+                                                    
                                                 GROUP BY 
                                                     ec.`name`, rc.cause_c
                                                 ORDER BY 
@@ -290,14 +279,14 @@ namespace synthesis_program.Service
                             if (count1 > 1)
                             {
                                 productPassRateViewModel.Top2Capcity = errorItem[1].value2;
-                                productPassRateViewModel.RepairReason2 = errorItem[0].value4;
+                                productPassRateViewModel.RepairReason2 = errorItem[1].value4;
                                 productPassRateViewModel.Count2 = errorItem[1].value3;
                                 PerformNoPassCount += Convert.ToInt32(errorItem[1].value3);
                             }
                             if (count1 > 2)
                             {
                                 productPassRateViewModel.Top3Capcity = errorItem[2].value2;
-                                productPassRateViewModel.RepairReason3 = errorItem[0].value4;
+                                productPassRateViewModel.RepairReason3 = errorItem[2].value4;
                                 productPassRateViewModel.Count3 = errorItem[2].value3;
                                 PerformNoPassCount += Convert.ToInt32(errorItem[2].value3);
                             }
@@ -306,21 +295,21 @@ namespace synthesis_program.Service
                             if (count2 > 0)
                             {
                                 productPassRateViewModel.Top1Surface = errorItem[count1 + 0].value2;
-                                productPassRateViewModel.RepairReason_1 = errorItem[0].value4;
+                                productPassRateViewModel.RepairReason_1 = errorItem[count1 + 0].value4;
                                 productPassRateViewModel.Count_1 = errorItem[count1 + 0].value3;
                                 CosmeticNoPassCount += Convert.ToInt32(errorItem[count1 + 0].value3);
                             }
                             if (count2 > 1)
                             {
                                 productPassRateViewModel.Top2Surface = errorItem[count1 + 1].value2;
-                                productPassRateViewModel.RepairReason_2 = errorItem[0].value4;
+                                productPassRateViewModel.RepairReason_2 = errorItem[count1 + 1].value4;
                                 productPassRateViewModel.Count_2 = errorItem[count1 + 1].value3;
                                 CosmeticNoPassCount += Convert.ToInt32(errorItem[count1 + 1].value3);
                             }
                             if (count2 > 2)
                             {
                                 productPassRateViewModel.Top3Surface = errorItem[count1 + 2].value2;
-                                productPassRateViewModel.RepairReason_3 = errorItem[0].value4;
+                                productPassRateViewModel.RepairReason_3 = errorItem[count1 + 2].value4;
                                 productPassRateViewModel.Count_3 = errorItem[count1 + 2].value3;
                                 CosmeticNoPassCount += Convert.ToInt32(errorItem[count1 + 2].value3);
                             }
@@ -413,5 +402,116 @@ namespace synthesis_program.Service
         //        throw;
         //    }
         //}
+
+        public async Task<List<ProductRecords>> QueryProductInfo(string code,string prod_type,string order_no)
+        {
+            try
+            {
+                string database = "hts_prod_" + code;
+                ProductRecords product = new ProductRecords();
+                List<ProductRecords> productList = new List<ProductRecords> ();
+                List<ProductRecords> resultList = new List<ProductRecords>();
+                string sql = string.Empty;
+
+                var sqlServerConfig = new ConnectionConfig()
+                {
+                    ConnectionString = ConfigurationManager.ConnectionStrings["ErpSQLServer"].ConnectionString,
+                    DbType = SqlSugar.DbType.SqlServer,
+                    IsAutoCloseConnection = true,
+                    InitKeyType = InitKeyType.Attribute
+                };
+                var mysqlConfig = new ConnectionConfig()
+                {
+                    ConnectionString = $@"Server=10.10.1.80;Port=3306;Database={database};Uid=1023711;Pwd=HtsUsr.1;CharSet=utf8mb4;",
+                    DbType = SqlSugar.DbType.MySql,
+                    IsAutoCloseConnection = true,
+                    InitKeyType = InitKeyType.Attribute
+                };
+
+                string sql0 = $@"WITH t1 AS (
+                                    SELECT DISTINCT
+                                        m.mo,
+                                        n.csn 
+                                    FROM prod_snapshot m
+                                    INNER JOIN prod_var n  
+                                        ON m.sn = n.sn
+                                        AND n.csn is not null
+                                    WHERE m.mo = @Mo  
+                                ),
+                                t2 AS (
+                                    SELECT 
+                                        t.mo,
+                                        t.finished_stamp,
+                                        t.line_id
+                                    FROM prod_test_rcds t 
+                                    WHERE t.mo = @Mo 
+                                    ORDER BY t.finished_stamp ASC 
+                                    LIMIT 1
+                                )
+                                SELECT 
+                                    DATE_FORMAT(t2.finished_stamp, '%Y-%m-%d %H:%i:%s') Date,t2.line_id LineId,@Model MODEL,@OrderNo BatchNo,@Completed_Qty COMPLETED_QTY,@Version Version,@PartNo PartNo,t1.csn ProductCode
+                                FROM t1
+                                INNER JOIN t2  
+                                    ON t1.mo = t2.mo";
+
+                using (var sqlServerDb = new SqlSugarClient(sqlServerConfig))
+                {
+                    if (!string.IsNullOrEmpty(order_no))        //单个结果与MySQL联查
+                    {
+                        sql = $@"select t.MO Mo,t.ORDER_NO BatchNo,t.COMPLETED_QTY,t.MODEL Version,t.PART_NO PartNo from HS_MO t where t.MODEL like '%{prod_type}%' and SUBSTRING(t.PART_NO, 1, 2) = '00' and t.ORDER_NO = '{order_no}'";
+                        product = await sqlServerDb.Ado.SqlQuerySingleAsync<ProductRecords>(sql).ConfigureAwait(false);
+                        using (var mySqlDb = new SqlSugarClient(mysqlConfig))
+                        {
+                            var result = await mySqlDb.Ado.SqlQueryAsync<ProductRecords>(sql0, new { Mo = product.Mo, Model = prod_type, OrderNo = product.BatchNo, Completed_Qty = product.COMPLETED_QTY, Version = product.Version, PartNo = product.PartNo }).ConfigureAwait(false);
+                            return result;
+                        }
+                    }
+                    else                //在erp查出结果集，遍历结果集，与MySQL联查
+                    {
+                        sql = $@"select t.MO Mo,t.ORDER_NO BatchNo,t.COMPLETED_QTY,t.MODEL,t.PART_NO PartNo from HS_MO t where t.MODEL like '%{prod_type}%' and SUBSTRING(t.PART_NO, 1, 2) = '00'";
+                        productList = await sqlServerDb.Ado.SqlQueryAsync<ProductRecords>(sql).ConfigureAwait(false);
+                        foreach (var p in productList)
+                        {
+                            using (var mySqlDb = new SqlSugarClient(mysqlConfig))
+                            {
+                                var result = await mySqlDb.Ado.SqlQueryAsync<ProductRecords>(sql0, new { Mo = p.Mo, Model = prod_type, OrderNo = p.BatchNo, Completed_Qty = p.COMPLETED_QTY, Version = p.Version, PartNo = p.PartNo }).ConfigureAwait(false);
+                                resultList.AddRange(result);
+                            }
+                        }
+                        return resultList.OrderBy(r => r.Date).ToList();
+                    }
+                }
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+        }
+
+        public async Task<List<string>> GetOrderNo(string prod_type)
+        {
+            try
+            {
+                var sqlServerConfig = new ConnectionConfig()
+                {
+                    ConnectionString = ConfigurationManager.ConnectionStrings["ErpSQLServer"].ConnectionString,
+                    DbType = SqlSugar.DbType.SqlServer,
+                    IsAutoCloseConnection = true,
+                    InitKeyType = InitKeyType.Attribute
+                };
+                using (var sqlServerDb = new SqlSugarClient(sqlServerConfig))
+                {
+                    string sql = $@"select t.ORDER_NO from HS_MO t where t.MODEL like '%{prod_type}%' and SUBSTRING(t.PART_NO, 1, 2) = '00'";
+                    return await sqlServerDb.Ado.SqlQueryAsync<string>(sql).ConfigureAwait(false);
+                }
+                
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+        }
     }
 }

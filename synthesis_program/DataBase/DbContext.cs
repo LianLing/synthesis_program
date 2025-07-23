@@ -17,6 +17,14 @@ namespace synthesis_program.DataBase
                 InitKeyType = InitKeyType.Attribute
             }));
 
+        public SqlSugarClient ErpSql => _client ?? (_client = new SqlSugarClient(
+            new ConnectionConfig()
+            {
+                ConnectionString = ConfigurationManager.ConnectionStrings["ErpSQLServer"].ConnectionString,
+                DbType = DbType.SqlServer,
+                IsAutoCloseConnection = true,
+                InitKeyType = InitKeyType.Attribute
+            }));
 
         public void Dispose() 
         {
