@@ -120,6 +120,7 @@
     <Compile Include="Models\ProductPassRateModel.cs" />
     <Compile Include="Models\ProductRecords.cs" />
     <Compile Include="Models\Prod_TypeModel.cs" />
+    <Compile Include="Models\StationStatusModel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="DataBase\DbContext.cs" />
     <Compile Include="Models\SequenceModel.cs" />
@@ -137,8 +138,8 @@
     <Compile Include="Views\CreateSequencePage.xaml.cs">
       <DependentUpon>CreateSequencePage.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Views\DirectRate.xaml.cs">
-      <DependentUpon>DirectRate.xaml</DependentUpon>
+    <Compile Include="Views\DirectRatePage.xaml.cs">
+      <DependentUpon>DirectRatePage.xaml</DependentUpon>
     </Compile>
     <Compile Include="Views\ProductPassRate.xaml.cs">
       <DependentUpon>ProductPassRate.xaml</DependentUpon>
@@ -169,7 +170,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
-    <Page Include="Views\DirectRate.xaml">
+    <Page Include="Views\DirectRatePage.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Views\ProductPassRate.xaml">

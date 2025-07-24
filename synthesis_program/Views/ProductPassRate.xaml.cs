@@ -226,7 +226,7 @@ namespace synthesis_program.Views
             {
                 //string code = allMachineKind.First(p => p.name == prod_type.SelectedItem.ToString()).code;
                 //查询站点数据
-                var result = tableService.QueryStations(code, prod_module.SelectedItem.ToString(), prod_model.SelectedItem.ToString());
+                var result = await tableService.QueryStations(code, prod_module.SelectedItem.ToString(), prod_model.SelectedItem.ToString());
                 foreach (var module in result)
                 {
                     CheckBoxItem checkBoxItem = new CheckBoxItem();

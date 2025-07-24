@@ -12,6 +12,7 @@ using SqlSugar;
 using synthesis_program.ViewModels;
 using System.Globalization;
 using System.Collections.ObjectModel;
+using static synthesis_program.Views.DirectRatePage;
 
 namespace synthesis_program.Service
 {
@@ -66,7 +67,7 @@ namespace synthesis_program.Service
             }
         }
 
-        public List<InterimModel> QueryStations(string machineKind,string module,string process)
+        public async Task<List<InterimModel>> QueryStations(string machineKind,string module,string process)
         {
             try
             {
@@ -83,7 +84,7 @@ namespace synthesis_program.Service
                                       AND t.prod_module = @prod_module
                                       AND t.prod_model = @prod_model
                                       AND next_cond >= 0";
-                return _db.Instance.Ado.SqlQuery<InterimModel>(sql, new { prod_type = machineKind, prod_module = module, prod_model = process }).ToList();
+                return await _db.Instance.Ado.SqlQueryAsync<InterimModel>(sql, new { prod_type = machineKind, prod_module = module, prod_model = process });
             }
             catch (Exception)
             {
@@ -510,6 +511,57 @@ namespace synthesis_program.Service
             catch (Exception)
             {
 
+                throw;
+            }
+        }
+
+        public async Task<int> UpdateStationStatus(string prod_type, List<CheckBoxItem> boxItems)
+        {
+            try
+            {
+                string stationStr = string.Empty;
+                if (boxItems.Count > 0)
+                {
+                    foreach (var item in boxItems)
+                    {
+                        stationStr += item.Code + ",";
+                    }
+                }
+                
+                stationStr = stationStr.TrimEnd(',');
+                //先查询是否已存在数据，如果不存在则插入
+                string checkSql = $@"SELECT COUNT(1) FROM TagsManage.station WHERE prod_type = '{prod_type}' and status = 1";
+                var count = await _db.Instance.Ado.GetIntAsync(checkSql).ConfigureAwait(false);
+                if (count == 0)
+                {
+                    string sql = $@"insert into TagsManage.station (code,status,prod_type) VALUES ('{stationStr}',1,'{prod_type}')";
+                    var result = await _db.Instance.Ado.ExecuteCommandAsync(sql).ConfigureAwait(false);
+                    return result;
+                }
+                else        //如果该机型下存在数据，则更新站点
+                {
+                    string sql = $@"UPDATE TagsManage.station SET status = 1,code = '{stationStr}' WHERE prod_type = '{prod_type}'";
+                    var result = await _db.Instance.Ado.ExecuteCommandAsync(sql).ConfigureAwait(false);
+                    return result;
+                }
+                    
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        public async Task<string> QueryCheckedStations(string prod_type)
+        {
+            try
+            {
+                string sql = $@"SELECT code FROM TagsManage.station WHERE prod_type = '{prod_type}' and status = 1";
+                var result = await _db.Instance.Ado.SqlQuerySingleAsync<string>(sql).ConfigureAwait(false);
+                return result;
+            }
+            catch (Exception)
+            {
                 throw;
             }
         }

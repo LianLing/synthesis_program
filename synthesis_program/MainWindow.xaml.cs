@@ -170,7 +170,12 @@ namespace synthesis_program.Views
         private void DirectConfig_Click(object sender, RoutedEventArgs e)
         {
             WindowState = WindowState.Maximized;          // 最大化窗口
-            mainFrame.Navigate(new ProductRecordPage());
+            mainFrame.Navigate(new DirectRatePage());
+        }
+
+        private void mainFrame_Navigated(object sender, NavigationEventArgs e)
+        {
+
         }
     }
 }
