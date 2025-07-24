@@ -21,7 +21,7 @@
             </MenuItem>
             <MenuItem x:Name="ConfigMenu"  Header="配置/维护" Height="26" Width="60" Margin="3,0" >
                 <MenuItem x:Name="NSSMConfig" IsEnabled="False" Header="NSSM维护项目" Click="NSSMConfig_Click"/>
-                <MenuItem x:Name="DirectRate" IsEnabled="True" Header="直通率站点维护" Click="DirectConfig_Click"/>
+                <MenuItem x:Name="DirectRate" IsEnabled="False" Header="直通率站点维护" Click="DirectConfig_Click"/>
             </MenuItem>
 
         </Menu>

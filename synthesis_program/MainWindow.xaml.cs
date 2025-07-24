@@ -70,6 +70,9 @@ namespace synthesis_program.Views
                             case "RecordProductInfo":
                                 RecordProductInfo.IsEnabled = true;
                                 break;
+                            case "DirectRate":
+                                DirectRate.IsEnabled = true;
+                                break;
                             default:
                                 break;
                         }
