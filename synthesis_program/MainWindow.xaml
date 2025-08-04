@@ -16,7 +16,7 @@
                 <MenuItem IsEnabled="False" Header="序列号规则维护" Click="EditSequenceRule_Click"/>
             </MenuItem>
             <MenuItem x:Name="TableReports"  Header="报表" Height="26" Width="60" Margin="3,0" >
-                <MenuItem x:Name="WholeThrouthRate" IsEnabled="False" Header="直通率" Click="QueryRecords_Click"/>
+                <MenuItem x:Name="WholeThrouthRate" IsEnabled="True" Header="直通率" Click="QueryRecords_Click"/>
                 <MenuItem x:Name="RecordProductInfo" IsEnabled="False" Header="生产编号记录" Click="ProductRecords_Click"/>
             </MenuItem>
             <MenuItem x:Name="ConfigMenu"  Header="配置/维护" Height="26" Width="60" Margin="3,0" >

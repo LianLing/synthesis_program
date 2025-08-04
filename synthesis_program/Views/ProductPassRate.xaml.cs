@@ -48,7 +48,7 @@ namespace synthesis_program.Views
         ProductPassRateModel rateModel = new ProductPassRateModel();
         private TextBox _comboBoxTextBox;
         private string code = string.Empty;
-
+        private List<string> stations = new List<string>();
 
         public ProductPassRate()
         {
@@ -95,17 +95,15 @@ namespace synthesis_program.Views
             lbl_warning.InvalidateVisual();             //强制刷新
             await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Background);
             string stationstr = "(";
-            var selectedStations = Stations.Where(s => s.IsChecked)
-                                           .Select(s => s.Name.Substring(s.Name.LastIndexOf(' ')+1))
-                                           .ToList();
-            if (selectedStations.Count == 0)
+            
+            if (stations.Count == 0)
             {
-                MessageBox.Show("请先选择站点");
+                MessageBox.Show("请先维护站点");
                 return;
             }
-            if (selectedStations.Count != 0)
+            if (stations.Count != 0)
             {
-                foreach (var item in selectedStations)
+                foreach (var item in stations)
                 {
                     stationstr = stationstr + "'" + item + "',";
                 }
@@ -115,8 +113,8 @@ namespace synthesis_program.Views
             ProductPassRateModel passRateModel = new ProductPassRateModel()
             {
                 prod_type = code,
-                process_grp_curr = prod_module.SelectedItem?.ToString(),
-                model_curr = prod_model.SelectedItem?.ToString(),
+                //process_grp_curr = prod_module.SelectedItem?.ToString(),
+                //model_curr = prod_model.SelectedItem?.ToString(),
                 mo = mo.SelectedItem?.ToString(),
                 finished_stamp = datePick.SelectedDate?.ObjToDate(),
                 prod_team = team.SelectedItem?.ToString(),
@@ -186,20 +184,28 @@ namespace synthesis_program.Views
             return parent as ComboBox;
         }
 
-        private void MachineSelectChanged(object sender, SelectionChangedEventArgs e)
+        private async void MachineSelectChanged(object sender, SelectionChangedEventArgs e)
         {
             Modules.Clear();
+            //根据机型查询已勾选工位
             if (prod_type.SelectedItem != null)
             {
-                //查询模组数据
                 code = allMachineKind.First(p => p.name == prod_type.SelectedItem.ToString()).code;
-                var result = tableService.QueryModules(code);
-                foreach (var module in result)
+                
+                var StationStr = await tableService.QueryStationsByProdType(code);
+                if (!string.IsNullOrEmpty(StationStr))
                 {
-                    Modules.Add(module);
+                    var StationList = StationStr.Split(',');
+                    foreach (var item in StationList)
+                    {
+                        stations.Add(item);
+                    }
                 }
+            }else
+            {
+                //MessageBox.Show("请选择机型", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
             }
-
         }
 
         private void prod_module_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -218,25 +224,24 @@ namespace synthesis_program.Views
 
         }
 
-        private async void prod_model_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            Stations.Clear();
-            AllMo.Clear();
-            if (prod_type.SelectedItem != null && prod_module.SelectedItem != null && prod_model.SelectedItem != null)
-            {
-                //string code = allMachineKind.First(p => p.name == prod_type.SelectedItem.ToString()).code;
-                //查询站点数据
-                var result = await tableService.QueryStations(code, prod_module.SelectedItem.ToString(), prod_model.SelectedItem.ToString());
-                foreach (var module in result)
-                {
-                    CheckBoxItem checkBoxItem = new CheckBoxItem();
-                    checkBoxItem.Name = module.value2 + " " + module.value1;
-                    Stations.Add(checkBoxItem);
-                }
+        //private async void prod_model_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        //{
+        //    Stations.Clear();
+        //    AllMo.Clear();
+        //    if (prod_type.SelectedItem != null && prod_module.SelectedItem != null && prod_model.SelectedItem != null)
+        //    {
+        //        //string code = allMachineKind.First(p => p.name == prod_type.SelectedItem.ToString()).code;
+        //        //查询站点数据
+        //        var result = await tableService.QueryStations(code, prod_module.SelectedItem.ToString(), prod_model.SelectedItem.ToString());
+        //        foreach (var module in result)
+        //        {
+        //            CheckBoxItem checkBoxItem = new CheckBoxItem();
+        //            checkBoxItem.Name = module.value2 + " " + module.value1;
+        //            Stations.Add(checkBoxItem);
+        //        }
 
-            }
-
-        }
+        //    }
+        //}
 
         private void mo_Loaded(object sender, RoutedEventArgs e)
         {

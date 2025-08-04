@@ -23,23 +23,7 @@
                     </ComboBox>
                 </StackPanel>
 
-                <!-- 模组 -->
-                <StackPanel Margin="10,0">
-                    <TextBlock Text="模组" Margin="0 0 0 2"/>
-                    <ComboBox x:Name="prod_module" Width="120" Height="26" FontSize="14"
-                                  BorderBrush="#FFCCCCCC" SelectedIndex="0" 
-                              ItemsSource="{Binding Modules}" SelectedItem="ModuleSingle" SelectionChanged="prod_module_SelectionChanged">
-                    </ComboBox>
-                </StackPanel>
-
-                <!-- 工艺 -->
-                <StackPanel Margin="10,0">
-                    <TextBlock Text="工艺" Margin="0 0 0 2"/>
-                    <ComboBox x:Name="prod_model" Width="120" Height="26" FontSize="14"
-                                  BorderBrush="#FFCCCCAA" SelectedIndex="0" 
-                              ItemsSource="{Binding Processes}" SelectedItem="processSingle" SelectionChanged="prod_model_SelectionChanged">
-                    </ComboBox>
-                </StackPanel>
+                
 
                 <StackPanel Margin="50,15,10,5" VerticalAlignment="Center">
                     <DatePicker x:Name="datePick" SelectedDateChanged="datePick_SelectedDateChanged"/>
@@ -78,37 +62,10 @@
         <!-- 主内容区域 -->
         <Grid Grid.Row="1" Margin="0,10,0,0">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="250"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
-            <!-- 站点选择 -->
-            <Border Grid.Column="0" Background="White"
-                        BorderBrush="#FFCCCCCC" BorderThickness="1">
-                <StackPanel Margin="10">
-                    <TextBlock Text="站点" FontWeight="Bold" Margin="0,0,0,10"/>
-                    <ItemsControl ItemsSource="{Binding Stations}" >
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <CheckBox Content="{Binding Name}" 
-                                              IsChecked="{Binding IsChecked}"
-                                              Margin="5,3">
-                                    <CheckBox.Style>
-                                        <Style TargetType="CheckBox">
-                                            <Style.Triggers>
-                                                <Trigger Property="IsChecked" Value="True">
-                                                    <Setter Property="Background" Value="#FF0078D7"/>
-                                                    <Setter Property="Foreground" Value="#FF0078D7"/>
-                                                </Trigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </CheckBox.Style>
-                                </CheckBox>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                </StackPanel>
-            </Border>
+            
 
             <!-- 数据区域 -->
 

@@ -317,7 +317,7 @@ namespace synthesis_program.Service
 
                         }
                         productPassRateViewModel.CheckCount = CosmeticPassCount + CosmeticNoPassCount + PerformNoPassCount;
-                        passRateModel.pass_rate = (CosmeticPassCount * 100.0 / productPassRateViewModel.CheckCount).ToString("0") + '%';
+                        passRateModel.pass_rate = (CosmeticPassCount * 100.0 / productPassRateViewModel.CheckCount).ToString("F2") + '%';
                     //}
                     //else
                     //{
@@ -559,6 +559,19 @@ namespace synthesis_program.Service
                 string sql = $@"SELECT code FROM TagsManage.station WHERE prod_type = '{prod_type}' and status = 1";
                 var result = await _db.Instance.Ado.SqlQuerySingleAsync<string>(sql).ConfigureAwait(false);
                 return result;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        public async Task<string> QueryStationsByProdType(string prod_type)
+        {
+            try
+            {
+                string sql = $@"select t.`code` from TagsManage.station t where t.prod_type = '{prod_type}'";
+                return await _db.Instance.Ado.SqlQuerySingleAsync<string>(sql, new { prod_type }).ConfigureAwait(false);
             }
             catch (Exception)
             {
