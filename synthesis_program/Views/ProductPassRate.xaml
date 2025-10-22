@@ -102,6 +102,7 @@
                             <DataGridTextColumn Header="周别" Binding="{Binding Week}" Width="Auto"/>
                             <DataGridTextColumn Header="日期" Binding="{Binding Date}" Width="Auto"/>
                             <DataGridTextColumn Header="线体" Binding="{Binding Line}" Width="Auto"/>
+                            <DataGridTextColumn Header="班别" Binding="{Binding Shift}" Width="Auto"/>
                             <DataGridTextColumn Header="IPQC" Binding="{Binding IPQC}" Width="Auto"/>
                             <DataGridTextColumn Header="PQE" Binding="{Binding PQE}" Width="Auto"/>
                             <DataGridTextColumn Header="制令号" Binding="{Binding Monumber}" Width="Auto"/>

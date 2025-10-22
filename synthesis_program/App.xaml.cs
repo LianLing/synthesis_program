@@ -1,7 +1,11 @@
-﻿using System.Windows;
+﻿using HtsCommon.DBMySql8;
+using MiscApi;
 using synthesis_program.Service;
-using synthesis_program.Views;
 using synthesis_program.Tools;
+using synthesis_program.Views;
+using System;
+using System.IO;
+using System.Windows;
 
 namespace synthesis_program
 {
@@ -27,13 +31,29 @@ namespace synthesis_program
             }
 
             base.OnStartup(e);
-
-            //if (!Hts.Init(e.Args))
-            //{
-            //    MessageBox.Show($"{Hts.ErrCode}: {Hts.ErrMsg}", "初始化失败", MessageBoxButton.OK, MessageBoxImage.Error);
-            //    Current.Shutdown(); // 初始化失败时退出
-            //    return;
-            //}
+            string[] EnvArgs = e.Args;
+            try
+            {
+                string myDebugCfg = @"d:\MyDebug.ini";
+                if (File.Exists(myDebugCfg) && EnvArgs.Length >= 2)
+                {
+                    if (EnvArgs[0] == "UserID" && EnvArgs[1] == "UserPwd")
+                    {
+                        EnvArgs[0] = MiscApi.Misc.GetProfile(myDebugCfg, "CONFIG", "UserID", "");
+                        EnvArgs[1] = MiscApi.Misc.GetProfile(myDebugCfg, "CONFIG", "UserPwd", "");
+                    }
+                }
+                if (!HtsDB.Init(EnvArgs))
+                {
+                    MessageBox.Show(HtsDB.LstMsg.sMsg, "HTS初始化失败");
+                    System.Environment.Exit(0);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show(ex.Message);
+                System.Environment.Exit(0);
+            }
 
             // 先创建主窗口实例
             var mainWindow = new MainWindow();

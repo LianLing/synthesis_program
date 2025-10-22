@@ -17,6 +17,9 @@ namespace synthesis_program.ViewModels
         public string Date { get; set; }
         //线体
         public string Line { get; set; }
+        //班别
+        public string Shift { get; set; }
+
         public string IPQC { get; set; }
         public string PQE { get; set; }
         //制令号

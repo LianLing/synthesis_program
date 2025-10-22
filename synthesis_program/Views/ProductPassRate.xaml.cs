@@ -17,6 +17,7 @@ using static HtsCommon.DBMySql8.HtsDB;
 using System.Windows.Threading;
 using synthesis_program.ViewModels;
 using SqlSugar;
+using HtsCommon.DBMySql8;
 
 namespace synthesis_program.Views
 {
@@ -73,12 +74,17 @@ namespace synthesis_program.Views
             //var allMo = await tableService.QueryAllMoAsync(prod_type.SelectedItem.ToString());
             //forechAdd(allMo, AllMo);
             //初始化班组信息
-            var allTeam = tableService.QueryAllTeam();
-            Teams.Add("");
-            foreach (var item in allTeam)
+            //越南没有班组,区分
+            if (HtsDB.Servers.sFactoryCode.ToUpper() == "NJ")
             {
-                Teams.Add(item);
+                var allTeam = tableService.QueryAllTeam();
+                Teams.Add("");
+                foreach (var item in allTeam)
+                {
+                    Teams.Add(item);
+                }
             }
+            
         }
 
         public void forechAdd(List<string> source, ObservableCollection<string> obj)
@@ -98,7 +104,7 @@ namespace synthesis_program.Views
             
             if (stations.Count == 0)
             {
-                MessageBox.Show("请先维护站点");
+                MessageBox.Show("该机型未维护站点", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
             if (stations.Count != 0)
@@ -122,13 +128,13 @@ namespace synthesis_program.Views
                 pass_rate = "0"
             };
 
-            var list = await tableService.QueryPassRate(passRateModel, prod_type.SelectedItem.ToString());
+            var list = await tableService.QueryPassRate(passRateModel, code);
             //await Task.Run(() =>
             //{
                 foreach (var item in list)
                 {
                 //Application.Current.Dispatcher.Invoke(() => SourceList.Add(item));
-                SourceList.Add(item);
+                    SourceList.Add(item);
                 }
             //});
             lbl_warning.Visibility = Visibility.Collapsed;
@@ -201,9 +207,12 @@ namespace synthesis_program.Views
                         stations.Add(item);
                     }
                 }
+                //else
+                //{
+                //    MessageBox.Show("未维护站点", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
+                //}
             }else
             {
-                //MessageBox.Show("请选择机型", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
         }
@@ -307,7 +316,7 @@ namespace synthesis_program.Views
                         ExcelWorksheet worksheet = package.Workbook.Worksheets.Add("直通率报告");
 
                         // 设置表头
-                        string[] headers = { "月份", "周别", "日期", "线体", "IPQC", "PQE", "制令号", "状态", "机型", "版型", "直通率目标", "产品直通率", "检验数", "外观合格数", "性能不良数", "外观不良数", "TOP1（性能）", "修理原因", "数量", "TOP2（性能）", "修理原因", "数量", "TOP3（性能）", "修理原因", "数量", "TOP1（外观）", "修理原因", "数量", "TOP2（外观）", "修理原因", "数量", "TOP3（外观）", "修理原因", "数量" };
+                        string[] headers = { "月份", "周别", "日期", "线体","班别", "IPQC", "PQE", "制令号", "状态", "机型", "版型", "直通率目标", "产品直通率", "检验数", "外观合格数", "性能不良数", "外观不良数", "TOP1（性能）", "修理原因", "数量", "TOP2（性能）", "修理原因", "数量", "TOP3（性能）", "修理原因", "数量", "TOP1（外观）", "修理原因", "数量", "TOP2（外观）", "修理原因", "数量", "TOP3（外观）", "修理原因", "数量" };
                         for (int i = 0; i < headers.Length; i++)
                         {
                             worksheet.Cells[1, i + 1].Value = headers[i];
@@ -332,36 +341,37 @@ namespace synthesis_program.Views
                             worksheet.Cells[row, 2].Value = item.Week;
                             worksheet.Cells[row, 3].Value = item.Date;
                             worksheet.Cells[row, 4].Value = item.Line;
-                            worksheet.Cells[row, 5].Value = item.IPQC;
-                            worksheet.Cells[row, 6].Value = item.PQE;
-                            worksheet.Cells[row, 7].Value = item.Monumber;
-                            worksheet.Cells[row, 8].Value = item.Status;
-                            worksheet.Cells[row, 9].Value = item.MachineKind;
-                            worksheet.Cells[row, 10].Value = item.Version;
-                            worksheet.Cells[row, 11].Value = item.TargetRate;
-                            worksheet.Cells[row, 12].Value = item.PassRate;
-                            worksheet.Cells[row, 13].Value = item.CheckCount;
-                            worksheet.Cells[row, 14].Value = item.CosmeticPassCount;
-                            worksheet.Cells[row, 15].Value = item.ErrorCount;
-                            worksheet.Cells[row, 16].Value = item.CosmeticErrorCount;
-                            worksheet.Cells[row, 17].Value = item.Top1Capcity;
-                            worksheet.Cells[row, 18].Value = item.RepairReason1;
-                            worksheet.Cells[row, 19].Value = item.Count1;
-                            worksheet.Cells[row, 20].Value = item.Top2Capcity;
-                            worksheet.Cells[row, 21].Value = item.RepairReason2;
-                            worksheet.Cells[row, 22].Value = item.Count2;
-                            worksheet.Cells[row, 23].Value = item.Top3Capcity;
-                            worksheet.Cells[row, 24].Value = item.RepairReason3;
-                            worksheet.Cells[row, 25].Value = item.Count3;
-                            worksheet.Cells[row, 26].Value = item.Top1Surface;
-                            worksheet.Cells[row, 27].Value = item.RepairReason_1;
-                            worksheet.Cells[row, 28].Value = item.Count_1;
-                            worksheet.Cells[row, 29].Value = item.Top2Surface;
-                            worksheet.Cells[row, 30].Value = item.RepairReason_2;
-                            worksheet.Cells[row, 31].Value = item.Count_2;
-                            worksheet.Cells[row, 32].Value = item.Top3Surface;
-                            worksheet.Cells[row, 33].Value = item.RepairReason_3;
-                            worksheet.Cells[row, 34].Value = item.Count_3;
+                            worksheet.Cells[row, 5].Value = item.Shift;
+                            worksheet.Cells[row, 6].Value = item.IPQC;
+                            worksheet.Cells[row, 7].Value = item.PQE;
+                            worksheet.Cells[row, 8].Value = item.Monumber;
+                            worksheet.Cells[row, 9].Value = item.Status;
+                            worksheet.Cells[row, 10].Value = item.MachineKind;
+                            worksheet.Cells[row, 11].Value = item.Version;
+                            worksheet.Cells[row, 12].Value = item.TargetRate;
+                            worksheet.Cells[row, 13].Value = item.PassRate;
+                            worksheet.Cells[row, 14].Value = item.CheckCount;
+                            worksheet.Cells[row, 15].Value = item.CosmeticPassCount;
+                            worksheet.Cells[row, 16].Value = item.ErrorCount;
+                            worksheet.Cells[row, 17].Value = item.CosmeticErrorCount;
+                            worksheet.Cells[row, 18].Value = item.Top1Capcity;
+                            worksheet.Cells[row, 19].Value = item.RepairReason1;
+                            worksheet.Cells[row, 20].Value = item.Count1;
+                            worksheet.Cells[row, 21].Value = item.Top2Capcity;
+                            worksheet.Cells[row, 22].Value = item.RepairReason2;
+                            worksheet.Cells[row, 23].Value = item.Count2;
+                            worksheet.Cells[row, 24].Value = item.Top3Capcity;
+                            worksheet.Cells[row, 25].Value = item.RepairReason3;
+                            worksheet.Cells[row, 26].Value = item.Count3;
+                            worksheet.Cells[row, 27].Value = item.Top1Surface;
+                            worksheet.Cells[row, 28].Value = item.RepairReason_1;
+                            worksheet.Cells[row, 29].Value = item.Count_1;
+                            worksheet.Cells[row, 30].Value = item.Top2Surface;
+                            worksheet.Cells[row, 31].Value = item.RepairReason_2;
+                            worksheet.Cells[row, 32].Value = item.Count_2;
+                            worksheet.Cells[row, 33].Value = item.Top3Surface;
+                            worksheet.Cells[row, 34].Value = item.RepairReason_3;
+                            worksheet.Cells[row, 35].Value = item.Count_3;
 
                             // 直通率单元格特殊处理
                             var rateCell = worksheet.Cells[row, 12];

@@ -1,17 +1,21 @@
-﻿using System;
+﻿using DsBoardInterface;
+using HtsCommon.DBMySql8;
+using SqlSugar;
+using synthesis_program.DataBase;
+using synthesis_program.Models;
+using synthesis_program.ViewModels;
+using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Configuration;
 using System.Data;
+using System.Globalization;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
-using synthesis_program.DataBase;
-using synthesis_program.Models;
-using SqlSugar;
-using synthesis_program.ViewModels;
-using System.Globalization;
-using System.Collections.ObjectModel;
+using static HsLibs.Utils.WinApi.HsWinApi;
+using static HtsCommon.DBMySql8.HtsDB;
 using static synthesis_program.Views.DirectRatePage;
 
 namespace synthesis_program.Service
@@ -22,11 +26,15 @@ namespace synthesis_program.Service
 
         public TableService() => _db = new DbContext();
         public void Dispose() => _db?.Dispose();
+        string currentConnection = $@"Server={HtsDB.DBSrvIP};Port={HtsDB.Servers.nDBSrvPort};Uid=htsusr;Pwd=HtsUsr.1;CharSet=utf8mb4;";
+
+        //CServers servers = new CServers();
 
         public List<Prod_TypeModel> QueryMachineKind()
         {
             try
             {
+                _db.Instance.CurrentConnectionConfig.ConnectionString = currentConnection + $"Database=hts_pcs;";
                 string sql = $@"SELECT t.`code`,t.name FROM hts_pcs.prod_type t WHERE t.CODE > 'A001' ORDER BY t.name";
                 var codes = _db.Instance.Ado.SqlQuery<Prod_TypeModel>(sql);
 
@@ -43,6 +51,7 @@ namespace synthesis_program.Service
         {
             try
             {
+                _db.Instance.CurrentConnectionConfig.ConnectionString = currentConnection + $"Database=hts_prod_{machineKind};";
                 string sql = $@"SELECT t.`code` FROM hts_pcs.prod_module t WHERE t.prod_type = @prod_type ORDER BY `code`";
                 return _db.Instance.Ado.SqlQuery<string>(sql, new { prod_type = machineKind }).ToList();
             }
@@ -57,6 +66,7 @@ namespace synthesis_program.Service
         {
             try
             {
+                _db.Instance.CurrentConnectionConfig.ConnectionString = currentConnection + $"Database=hts_prod_{code};";
                 string sql = $@"SELECT t.`code` FROM hts_pcs.prod_model t WHERE t.prod_type = @prod_type  ORDER BY t.`code`";
                 return _db.Instance.Ado.SqlQuery<string>(sql, new { prod_type = code }).ToList();
             }
@@ -71,7 +81,7 @@ namespace synthesis_program.Service
         {
             try
             {
-                //string sql = $@"SELECT distinct t.prod_station FROM hts_pcs.vw_eq_cfg_stn_distribute t WHERE t.prod_type = @prod_type AND t.prod_module  = @prod_module AND t.prod_model = @prod_model AND next_cond >= 0";
+                _db.Instance.CurrentConnectionConfig.ConnectionString = currentConnection + $"Database=hts_prod_{machineKind};";
                 string sql = $@"SELECT DISTINCT
                                       t.prod_station value1,
                                       s.`name` value2
@@ -101,7 +111,7 @@ namespace synthesis_program.Service
                 string database = "hts_prod_" + dataname;
                 var sqlServerConfig = new ConnectionConfig()
                 {
-                    ConnectionString = $@"Server=10.10.1.80;Port=3306;Database={database};Uid=1023711;Pwd=HtsUsr.1;CharSet=utf8mb4;",
+                    ConnectionString = $@"Server={HtsDB.DBSrvIP};Port={HtsDB.Servers.nDBSrvPort};Database={database};Uid=1023711;Pwd=HtsUsr.1;CharSet=utf8mb4;",
                     DbType = SqlSugar.DbType.MySql,
                     IsAutoCloseConnection = true,
                     InitKeyType = InitKeyType.Attribute
@@ -141,7 +151,6 @@ namespace synthesis_program.Service
                     return dt.Rows.Cast<DataRow>().Select(row => row[0].ToString()).ToList();
                 }
 
-                    
             }
             catch (Exception)
             {
@@ -157,10 +166,22 @@ namespace synthesis_program.Service
                 string database = "hts_prod_" + passRateModel.prod_type;
                 int CosmeticNoPassCount = 0;    //外观不良数
                 int PerformNoPassCount = 0;     //性能不良数
+                string NGcode = "code";     //dtKanBan列code
+                string defect_count = "defect_count"; //dtKanBan列defect_count
+                string timeType = "timeType"; //dtKanBan列timeType
+                ///看板不良:白班数量混合计算，夜班单独计算
+                var dtKanBan = Outdefect.OutDefectQuary(HtsDB.DBSrvIP, HtsDB.Servers.nDBSrvPort.ToString(), prod_type, passRateModel.finished_stamp.ToString(), passRateModel.mo);
+                
+
+                
                 ProductPassRateViewModel productPassRateViewModel = new ProductPassRateViewModel();
+                ProductPassRateViewModel productPassRateViewModelWhite = new ProductPassRateViewModel();
+                ProductPassRateViewModel productPassRateViewModelBlack = new ProductPassRateViewModel();
+                List<ProductPassRateViewModel> passrateModelList = new List<ProductPassRateViewModel>();
+
                 var sqlServerConfig = new ConnectionConfig()
                 {
-                    ConnectionString = $@"Server=10.10.1.80;Port=3306;Database={database};Uid=1023711;Pwd=HtsUsr.1;CharSet=utf8mb4;",
+                    ConnectionString = $@"Server={HtsDB.DBSrvIP};Port={HtsDB.Servers.nDBSrvPort};Database={database};Uid=htsusr;Pwd=HtsUsr.1;CharSet=utf8mb4;",
                     DbType = SqlSugar.DbType.MySql,
                     IsAutoCloseConnection = true,
                     InitKeyType = InitKeyType.Attribute
@@ -176,21 +197,18 @@ namespace synthesis_program.Service
                         conditions.Add($@"t.prod_team = @ProdTeam");
                     if (!string.IsNullOrEmpty(passRateModel.mo))
                         conditions.Add($@"t.mo = @Mo");
-                    if (passRateModel.finished_stamp != null)
-                        conditions.Add($@"t.finished_stamp BETWEEN @StartTime AND @EndTime");
+                    
                     if (!string.IsNullOrEmpty(passRateModel.station_curr))
                         conditions.Add($@"t.station_curr in {passRateModel.station_curr}");
 
-                    string whereClause = conditions.Any() ? "WHERE " + string.Join(" AND ", conditions) : "";
+                    string whereClause = string.Empty; 
 
                     // 创建参数化查询
                     var parameters = new List<SugarParameter>
                     {
                         new SugarParameter("@Prod_type",passRateModel.prod_type),
                         new SugarParameter("@ProdTeam", passRateModel.prod_team),
-                        new SugarParameter("@Mo", passRateModel.mo),
-                        new SugarParameter("@StartTime", passRateModel.finished_stamp.ObjToDate().ToString("yyyy-MM-dd 00:00:00")),
-                        new SugarParameter("@EndTime", passRateModel.finished_stamp.ObjToDate().ToString("yyyy-MM-dd 23:59:59"))
+                        new SugarParameter("@Mo", passRateModel.mo)
                     };
                     /*
                      * 检验数 = 外观合格数 + 外观/性能不良数
@@ -198,7 +216,90 @@ namespace synthesis_program.Service
                      */
 
                     // 查询当天外观合格数 = 合格数 + 不合格但二次流水正常的数量
-                    string sqlCosmeticPassCount = $@"SELECT
+                    if (prod_type != "A05F" && prod_type != "A0CE")
+                    {
+                        if (passRateModel.finished_stamp != null)
+                            conditions.Add($@"t.finished_stamp BETWEEN {passRateModel.finished_stamp.ObjToDate().ToString("yyyy-MM-dd 8:30:00")} AND {passRateModel.finished_stamp.ObjToDate().ToString("yyyy-MM-dd 20:30:00")}");
+                        productPassRateViewModel.Shift = "白班";
+                        productPassRateViewModel = await GetProductPassRate(sqlServerDb, whereClause, parameters, productPassRateViewModel, passRateModel, CosmeticNoPassCount, PerformNoPassCount, prod_type).ConfigureAwait(false);
+                        passrateModelList.Add(productPassRateViewModel);
+                    }
+                    else                //A05F/A0CE白夜班区分
+                    {
+                        if (dtKanBan.Rows.Count > 0)
+                        {
+                            
+                            if (dtKanBan.AsEnumerable().Any(row => row.Field<string>(timeType).Contains("白班")))
+                            {
+                                foreach (DataRow row in dtKanBan.Rows)
+                                {
+                                    if (row[timeType].ToString().Contains("白班"))
+                                    {
+                                        if (row[NGcode].ToString().Substring(1, 2) == "U1")      //外观不良
+                                        {
+                                            CosmeticNoPassCount += row[defect_count].ObjToInt();
+                                        }
+                                        else                                                        //性能不良
+                                        {
+                                            PerformNoPassCount += row[defect_count].ObjToInt();
+                                        }
+                                    }
+                                }
+
+                                if (passRateModel.finished_stamp != null)
+                                    conditions.Add($@"t.finished_stamp BETWEEN '{passRateModel.finished_stamp.ObjToDate().ToString("yyyy-MM-dd 8:30:00")}' AND '{passRateModel.finished_stamp.ObjToDate().ToString("yyyy-MM-dd 20:30:00")}'");
+                                productPassRateViewModelWhite.Shift = "白班";
+                                whereClause = conditions.Any() ? "WHERE " + string.Join(" AND ", conditions) : ""; 
+                                productPassRateViewModel = await GetProductPassRate(sqlServerDb, whereClause, parameters, productPassRateViewModelWhite, passRateModel, CosmeticNoPassCount, PerformNoPassCount, prod_type).ConfigureAwait(false);
+                                passrateModelList.Add(productPassRateViewModel);
+
+                                
+                            }
+                            if (dtKanBan.AsEnumerable().Any(row => row.Field<string>(timeType).Contains("夜班")))
+                            {
+                                CosmeticNoPassCount = 0;
+                                PerformNoPassCount = 0;
+                                foreach (DataRow row in dtKanBan.Rows)
+                                {
+                                    if (row[timeType].ToString().Contains("夜班"))
+                                    {
+                                        if (row[NGcode].ToString().Substring(1, 2) == "U1")      //外观不良
+                                        {
+                                            CosmeticNoPassCount += row[defect_count].ObjToInt();
+                                        }
+                                        else                                                        //性能不良
+                                        {
+                                            PerformNoPassCount += row[defect_count].ObjToInt();
+                                        }
+                                    }
+                                }
+                                if (passRateModel.finished_stamp != null)
+                                    conditions.Add($@"t.finished_stamp BETWEEN '{passRateModel.finished_stamp.ObjToDate().ToString("yyyy-MM-dd 20:30:00")}' AND '{passRateModel.finished_stamp.ObjToDate().AddDays(1).ToString("yyyy-MM-dd 8:30:00")}'");
+                                productPassRateViewModelBlack.Shift = "夜班";
+                                whereClause = conditions.Any() ? "WHERE " + string.Join(" AND ", conditions) : "";
+                                productPassRateViewModel = await GetProductPassRate(sqlServerDb, whereClause, parameters, productPassRateViewModelBlack, passRateModel, CosmeticNoPassCount, PerformNoPassCount, prod_type).ConfigureAwait(false);
+                                passrateModelList.Add(productPassRateViewModel);
+                            }
+                        }
+                    }
+
+
+                        return passrateModelList;
+                }
+            }
+            catch (Exception ex)
+            {
+                // 记录日志
+                Console.WriteLine($"计算直通率时发生错误: {ex.Message}");
+                throw;
+            }
+        }
+
+        public async Task<ProductPassRateViewModel> GetProductPassRate(SqlSugarClient sqlServerDb, string whereClause, List<SugarParameter> parameters, ProductPassRateViewModel productPassRateViewModel, ProductPassRateModel passRateModel,int CosmeticNoPassCount, int PerformNoPassCount,string prod_type)
+        {
+
+            // 查询当天外观合格数 = 合格数 + 不合格但二次流水正常的数量
+            string sqlCosmeticPassCount = $@"SELECT
                                                       COUNT(DISTINCT t.sn)
                                                     FROM
                                                       prod_test_rcds t,
@@ -207,13 +308,13 @@ namespace synthesis_program.Service
                                                       AND t.station_curr = s.prod_station
                                                       AND s.`S.name` like '%外观%'
                                                       AND t.err_code = '0000'
-                                                      ##AND NOT EXISTS (SELECT 1 FROM prod_test_rcds t2 WHERE t2.sn = t.sn AND t2.station_curr = '00CF098')";
-                    int CosmeticPassCount = await sqlServerDb.Ado.GetIntAsync(sqlCosmeticPassCount, parameters.ToArray()).ConfigureAwait(false);
-                    //if (CosmeticPassCount > 0)
-                    //{
-                        //查询外观/性能不良数
-                        //TOP1-3不良
-                        string sqlError = $@"(SELECT '性能不良' AS value1,
+                                                      ";
+            //##AND NOT EXISTS (SELECT 1 FROM prod_test_rcds t2 WHERE t2.sn = t.sn AND t2.station_curr = '00CF098')
+            int CosmeticPassCount = await sqlServerDb.Ado.GetIntAsync(sqlCosmeticPassCount, parameters.ToArray()).ConfigureAwait(false);
+
+            //查询外观/性能不良数
+            //TOP1-3不良
+            string sqlError = $@"(SELECT '性能不良' AS value1,
                                                     ec.`name` AS value2,
                                                     COUNT(DISTINCT t.sn) AS value3,
                                                     rc.cause_c value4
@@ -265,89 +366,75 @@ namespace synthesis_program.Service
                                                     LIMIT 3
                                                     )";
 
-                        var errorItem = await sqlServerDb.Ado.SqlQueryAsync<InterimModel>(sqlError, parameters.ToArray()).ConfigureAwait(false);
+            var errorItem = await sqlServerDb.Ado.SqlQueryAsync<InterimModel>(sqlError, parameters.ToArray()).ConfigureAwait(false);
 
-                        if (errorItem.Count > 0)
-                        {
-                            int count1 = errorItem.FindAll(p => p.value1 == "性能不良").Count();
-                            if (count1 > 0)
-                            {
-                                productPassRateViewModel.Top1Capcity = errorItem[0].value2;
-                                productPassRateViewModel.RepairReason1 = errorItem[0].value4;
-                                productPassRateViewModel.Count1 = errorItem[0].value3;
-                                PerformNoPassCount += Convert.ToInt32(errorItem[0].value3);
-                            }
-                            if (count1 > 1)
-                            {
-                                productPassRateViewModel.Top2Capcity = errorItem[1].value2;
-                                productPassRateViewModel.RepairReason2 = errorItem[1].value4;
-                                productPassRateViewModel.Count2 = errorItem[1].value3;
-                                PerformNoPassCount += Convert.ToInt32(errorItem[1].value3);
-                            }
-                            if (count1 > 2)
-                            {
-                                productPassRateViewModel.Top3Capcity = errorItem[2].value2;
-                                productPassRateViewModel.RepairReason3 = errorItem[2].value4;
-                                productPassRateViewModel.Count3 = errorItem[2].value3;
-                                PerformNoPassCount += Convert.ToInt32(errorItem[2].value3);
-                            }
-
-                            int count2 = errorItem.FindAll(p => p.value1 == "外观不良").Count();
-                            if (count2 > 0)
-                            {
-                                productPassRateViewModel.Top1Surface = errorItem[count1 + 0].value2;
-                                productPassRateViewModel.RepairReason_1 = errorItem[count1 + 0].value4;
-                                productPassRateViewModel.Count_1 = errorItem[count1 + 0].value3;
-                                CosmeticNoPassCount += Convert.ToInt32(errorItem[count1 + 0].value3);
-                            }
-                            if (count2 > 1)
-                            {
-                                productPassRateViewModel.Top2Surface = errorItem[count1 + 1].value2;
-                                productPassRateViewModel.RepairReason_2 = errorItem[count1 + 1].value4;
-                                productPassRateViewModel.Count_2 = errorItem[count1 + 1].value3;
-                                CosmeticNoPassCount += Convert.ToInt32(errorItem[count1 + 1].value3);
-                            }
-                            if (count2 > 2)
-                            {
-                                productPassRateViewModel.Top3Surface = errorItem[count1 + 2].value2;
-                                productPassRateViewModel.RepairReason_3 = errorItem[count1 + 2].value4;
-                                productPassRateViewModel.Count_3 = errorItem[count1 + 2].value3;
-                                CosmeticNoPassCount += Convert.ToInt32(errorItem[count1 + 2].value3);
-                            }
-
-                        }
-                        productPassRateViewModel.CheckCount = CosmeticPassCount + CosmeticNoPassCount + PerformNoPassCount;
-                        passRateModel.pass_rate = (CosmeticPassCount * 100.0 / productPassRateViewModel.CheckCount).ToString("F2") + '%';
-                    //}
-                    //else
-                    //{
-                    //    passRateModel.pass_rate = "0%";
-                    //}
-
-                    
-                    string sqlPass = $@"";
-
-                    {
-                        productPassRateViewModel.Month = ((Month)(passRateModel.finished_stamp.ObjToDate().Month)).ToString();
-                        productPassRateViewModel.Week = GetCurrentWeekNumber(passRateModel.finished_stamp.ObjToDate()).ToString();
-                        productPassRateViewModel.Date = passRateModel.finished_stamp.ObjToDate().ToString("MM/dd");
-                        productPassRateViewModel.Monumber = passRateModel.mo;
-                        productPassRateViewModel.MachineKind = prod_type;
-                        productPassRateViewModel.pass_rate = passRateModel.pass_rate;
-                        productPassRateViewModel.CosmeticPassCount = CosmeticPassCount;
-                        productPassRateViewModel.CosmeticErrorCount = CosmeticNoPassCount;
-                        productPassRateViewModel.ErrorCount = PerformNoPassCount;
-                    }
-                    return new List<ProductPassRateViewModel> { productPassRateViewModel };
-                }
-            }
-            catch (Exception ex)
+            if (errorItem.Count > 0)
             {
-                // 记录日志
-                Console.WriteLine($"计算直通率时发生错误: {ex.Message}");
-                throw;
+                int count1 = errorItem.FindAll(p => p.value1 == "性能不良").Count();
+                if (count1 > 0)
+                {
+                    productPassRateViewModel.Top1Capcity = errorItem[0].value2;
+                    productPassRateViewModel.RepairReason1 = errorItem[0].value4;
+                    productPassRateViewModel.Count1 = errorItem[0].value3;
+                    PerformNoPassCount += Convert.ToInt32(errorItem[0].value3);
+                }
+                if (count1 > 1)
+                {
+                    productPassRateViewModel.Top2Capcity = errorItem[1].value2;
+                    productPassRateViewModel.RepairReason2 = errorItem[1].value4;
+                    productPassRateViewModel.Count2 = errorItem[1].value3;
+                    PerformNoPassCount += Convert.ToInt32(errorItem[1].value3);
+                }
+                if (count1 > 2)
+                {
+                    productPassRateViewModel.Top3Capcity = errorItem[2].value2;
+                    productPassRateViewModel.RepairReason3 = errorItem[2].value4;
+                    productPassRateViewModel.Count3 = errorItem[2].value3;
+                    PerformNoPassCount += Convert.ToInt32(errorItem[2].value3);
+                }
+
+                int count2 = errorItem.FindAll(p => p.value1 == "外观不良").Count();
+                if (count2 > 0)
+                {
+                    productPassRateViewModel.Top1Surface = errorItem[count1 + 0].value2;
+                    productPassRateViewModel.RepairReason_1 = errorItem[count1 + 0].value4;
+                    productPassRateViewModel.Count_1 = errorItem[count1 + 0].value3;
+                    CosmeticNoPassCount += Convert.ToInt32(errorItem[count1 + 0].value3);
+                }
+                if (count2 > 1)
+                {
+                    productPassRateViewModel.Top2Surface = errorItem[count1 + 1].value2;
+                    productPassRateViewModel.RepairReason_2 = errorItem[count1 + 1].value4;
+                    productPassRateViewModel.Count_2 = errorItem[count1 + 1].value3;
+                    CosmeticNoPassCount += Convert.ToInt32(errorItem[count1 + 1].value3);
+                }
+                if (count2 > 2)
+                {
+                    productPassRateViewModel.Top3Surface = errorItem[count1 + 2].value2;
+                    productPassRateViewModel.RepairReason_3 = errorItem[count1 + 2].value4;
+                    productPassRateViewModel.Count_3 = errorItem[count1 + 2].value3;
+                    CosmeticNoPassCount += Convert.ToInt32(errorItem[count1 + 2].value3);
+                }
+
             }
+            productPassRateViewModel.CheckCount = CosmeticPassCount + CosmeticNoPassCount + PerformNoPassCount;
+            passRateModel.pass_rate = (CosmeticPassCount * 100.0 / productPassRateViewModel.CheckCount).ToString("F2") + '%';
+
+
+            {
+                productPassRateViewModel.Month = ((Month)(passRateModel.finished_stamp.ObjToDate().Month)).ToString();
+                productPassRateViewModel.Week = GetCurrentWeekNumber(passRateModel.finished_stamp.ObjToDate()).ToString();
+                productPassRateViewModel.Date = passRateModel.finished_stamp.ObjToDate().ToString("MM/dd");
+                productPassRateViewModel.Monumber = passRateModel.mo;
+                productPassRateViewModel.MachineKind = prod_type;
+                productPassRateViewModel.pass_rate = passRateModel.pass_rate;
+                productPassRateViewModel.CosmeticPassCount = CosmeticPassCount;
+                productPassRateViewModel.CosmeticErrorCount = CosmeticNoPassCount;
+                productPassRateViewModel.ErrorCount = PerformNoPassCount;
+            }
+            return productPassRateViewModel;
         }
+
 
         public enum Month
         {
@@ -413,7 +500,6 @@ namespace synthesis_program.Service
                 List<ProductRecords> productList = new List<ProductRecords> ();
                 List<ProductRecords> resultList = new List<ProductRecords>();
                 string sql = string.Empty;
-
                 var sqlServerConfig = new ConnectionConfig()
                 {
                     ConnectionString = ConfigurationManager.ConnectionStrings["ErpSQLServer"].ConnectionString,
@@ -519,6 +605,7 @@ namespace synthesis_program.Service
         {
             try
             {
+                _db.Instance.CurrentConnectionConfig.ConnectionString = currentConnection + $"Database=hts_prod_{prod_type};";
                 string stationStr = string.Empty;
                 if (boxItems.Count > 0)
                 {
@@ -556,6 +643,7 @@ namespace synthesis_program.Service
         {
             try
             {
+                _db.Instance.CurrentConnectionConfig.ConnectionString = currentConnection + $"Database=hts_prod_{prod_type};";
                 string sql = $@"SELECT code FROM TagsManage.station WHERE prod_type = '{prod_type}' and status = 1";
                 var result = await _db.Instance.Ado.SqlQuerySingleAsync<string>(sql).ConfigureAwait(false);
                 return result;
@@ -570,6 +658,7 @@ namespace synthesis_program.Service
         {
             try
             {
+                _db.Instance.CurrentConnectionConfig.ConnectionString = currentConnection + $"Database=hts_prod_{prod_type};";
                 string sql = $@"select t.`code` from TagsManage.station t where t.prod_type = '{prod_type}'";
                 return await _db.Instance.Ado.SqlQuerySingleAsync<string>(sql, new { prod_type }).ConfigureAwait(false);
             }
