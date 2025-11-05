@@ -180,5 +180,10 @@ namespace synthesis_program.Views
         {
 
         }
+
+        private void ChangeLanguage_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
     }
 }

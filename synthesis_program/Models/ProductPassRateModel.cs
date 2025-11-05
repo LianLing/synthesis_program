@@ -20,6 +20,8 @@ namespace synthesis_program.Models
         public string model_curr { get; set; }
         //站点
         public string station_curr { get; set; }
+        //线别
+        public string line_id { get; set; }
         //工单
         public string mo { get; set; }
         //班组
@@ -31,7 +33,6 @@ namespace synthesis_program.Models
         public string sn { get; set; }
         public int status { get; set; }
         public int tst_rlt { get; set; }
-        public string line_id { get; set; }
 
     }
 }

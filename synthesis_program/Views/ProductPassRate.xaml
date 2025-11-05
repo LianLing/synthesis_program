@@ -15,7 +15,7 @@
                 <!-- 机型 -->
                 <StackPanel Margin="5,0">
                     <TextBlock Text="机型" Margin="0 0 0 2"/>
-                    <ComboBox x:Name="prod_type" Width="120" Height="26" FontSize="14"
+                    <ComboBox x:Name="prod_type" Width="156" Height="26" FontSize="14"
                                   BorderBrush="#FFCCCCCC" SelectedIndex="0"
                                   IsEditable="True" Loaded="ModelComboBox_Loaded"
                                   ItemsSource="{Binding machineKind}"
@@ -38,6 +38,16 @@
                     </ComboBox>
                 </StackPanel>
 
+                <!-- 线别 -->
+                <StackPanel Margin="10,5">
+                    <TextBlock Text="线别" Margin="0 0 0 2"/>
+                    <ComboBox x:Name="line" Width="120" Height="26" FontSize="14"
+            BorderBrush="#FFCCCCCC" SelectedIndex="0"
+            IsEditable="True"
+            ItemsSource="{Binding AllLine}" >
+                    </ComboBox>
+                </StackPanel>
+                
                 <!-- 班组 -->
                 <StackPanel Margin="10,0">
                     <TextBlock Text="班组" Margin="0 0 0 2"/>

@@ -24,7 +24,7 @@ namespace synthesis_program.Views
     public partial class ProductPassRate : Page
     {
         //站点
-        public ObservableCollection<CheckBoxItem> Stations { get; set; } = new ObservableCollection<CheckBoxItem>();
+        //public ObservableCollection<CheckBoxItem> Stations { get; set; } = new ObservableCollection<CheckBoxItem>();
         //机型数据源
         public ObservableCollection<string> machineKind { get; set; } = new ObservableCollection<string>();
         //模组
@@ -39,7 +39,8 @@ namespace synthesis_program.Views
         public ObservableCollection<Prod_TypeModel> allMachineKind { get; set; } = new ObservableCollection<Prod_TypeModel>();
         //工单
         public ObservableCollection<string> AllMo { get; set; } = new ObservableCollection<string> { };
-
+        //线别
+        public ObservableCollection<string> AllLine { get; set; } = new ObservableCollection<string> { };
         //表单
         public ObservableCollection<ProductPassRateModel> RateList { get; set; } = new ObservableCollection<ProductPassRateModel> { };
         //数据源
@@ -49,7 +50,7 @@ namespace synthesis_program.Views
         ProductPassRateModel rateModel = new ProductPassRateModel();
         private TextBox _comboBoxTextBox;
         private string code = string.Empty;
-        private List<string> stations = new List<string>();
+        private List<string> stations;
 
         public ProductPassRate()
         {
@@ -125,7 +126,8 @@ namespace synthesis_program.Views
                 finished_stamp = datePick.SelectedDate?.ObjToDate(),
                 prod_team = team.SelectedItem?.ToString(),
                 station_curr = stationstr,
-                pass_rate = "0"
+                pass_rate = "0",
+                line_id = line.SelectedItem?.ToString()
             };
 
             var list = await tableService.QueryPassRate(passRateModel, code);
@@ -193,6 +195,7 @@ namespace synthesis_program.Views
         private async void MachineSelectChanged(object sender, SelectionChangedEventArgs e)
         {
             Modules.Clear();
+            stations = new List<string>();
             //根据机型查询已勾选工位
             if (prod_type.SelectedItem != null)
             {
@@ -429,7 +432,23 @@ namespace synthesis_program.Views
                 forechAdd(allMo, AllMo);
             }
             else
+            {
+                lbl_warning.Content = "请先选择机型！";
                 return;
+            }
+            //初始化线别信息
+            if (prod_type.SelectedItem != null && datePick != null)
+            {
+                var allLine = await tableService.QueryAllLineAsync(code, (DateTime)datePick.SelectedDate);
+                AllLine.Add("");
+                forechAdd(allLine, AllLine);
+            }
+            else
+            {
+                lbl_warning.Content = "请先选择机型！";
+                return;
+            }
+
         }
 
         // 站点选择辅助类
@@ -444,6 +463,7 @@ namespace synthesis_program.Views
             //选择工单带出线别
             //await tableService.GetLineByMo(prod_type.SelectedItem.ToString(), mo.SelectedItem.ToString());
         }
+
 
     }
 }
