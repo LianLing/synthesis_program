@@ -669,6 +669,7 @@ namespace synthesis_program.Service
                 productPassRateViewModel.Month = ((Month)(passRateModel.finished_stamp.ObjToDate().Month)).ToString();
                 productPassRateViewModel.Week = GetCurrentWeekNumber(passRateModel.finished_stamp.ObjToDate()).ToString();
                 productPassRateViewModel.Date = passRateModel.finished_stamp.ObjToDate().ToString("MM/dd");
+                productPassRateViewModel.Line = passRateModel.line_id != "" ? passRateModel.line_id : "全部";
                 productPassRateViewModel.Monumber = passRateModel.mo;
                 productPassRateViewModel.MachineKind = prod_type;
                 productPassRateViewModel.pass_rate = passRateModel.pass_rate;
