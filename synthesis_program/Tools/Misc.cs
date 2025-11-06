@@ -383,6 +383,7 @@ namespace MiscApi
         public static string t(string sInput, params string[] values)
         {
             string s = sInput;
+            if (_languageCn == null) return null;
 
             if (_languageCn.Length > 0)
             {

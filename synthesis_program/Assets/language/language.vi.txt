@@ -1,0 +1,49 @@
+﻿Quản lý nhãn
+Duy trì nhãn
+Báo cáo
+Tỷ lệ trực tiếp
+Ghi nhận mã sản xuất
+Cấu hình/Duy trì
+Dự án duy trì NSSM
+Duy trì trạm tỷ lệ trực tiếp
+Cài đặt
+Nhập mã vật liệu hoặc người tạo
+Tìm kiếm
+Thêm mới
+Xóa
+Sửa đổi
+Lưu
+ID
+Loại máy
+Số lô sản xuất
+Lượng sản xuất
+Phiên bản
+Mã vật liệu máy hoàn chỉnh
+Mã sản xuất bắt đầu
+Mã sản xuất kết thúc
+Địa chỉ mẫu
+Mã seri đã tạo
+Loại máy liên quan
+Người tạo
+Thời gian tạo
+Người sửa đổi
+Thời gian sửa đổi
+Ghi chú
+Không tìm thấy bản ghi phù hợp
+Thông báo
+Truy vấn cơ sở dữ liệu thất bại
+Lỗi
+Vui lòng chọn trước bản ghi cần sửa
+Mã vật liệu không được để trống
+Lỗi xác thực
+Loại máy không được để trống
+Mã seri
+đã tồn tại
+Số lô
+Xác thực thất bại
+Thêm thành công
+Thêm thất bại
+Cập nhật ID bản ghi
+Thất bại
+Lưu bản ghi thành công
+Lưu thất bại

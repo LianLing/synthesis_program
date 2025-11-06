@@ -1,26 +1,28 @@
-﻿using System.Windows;
-using System.Windows.Controls;
-using synthesis_program.Models;
-using System.Collections.ObjectModel;
-using synthesis_program.Service;
+﻿using MiscApi;
 using SqlSugar;
 using synthesis_program.DataBase;
-using System.Windows.Threading;
+using synthesis_program.Interface;
+using synthesis_program.Models;
+using synthesis_program.Service;
+using System;
+using System.Collections.ObjectModel;
+using System.Linq;
+using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Media.Media3D;
 using System.Windows.Navigation;
-using System.Linq;
-using System;
+using System.Windows.Threading;
 
 namespace synthesis_program.Views
 {
-    public partial class SaveRecordPage : Page
+    // 实现语言刷新接口
+    public partial class SaveRecordPage : Page, ILanguageRefreshable
     {
         private readonly TagService _tagService = new TagService();
         private bool _isEditing = false;
         public ObservableCollection<TagsModel> TagsList { get; set; } = new ObservableCollection<TagsModel>();
         public ObservableCollection<TagsModel> TagsLatestList { get; set; } = new ObservableCollection<TagsModel>();
         public TagsModel TagsListSingle { get; set; }
-
         public SaveRecordPage()
         {
             InitializeComponent();
@@ -31,6 +33,8 @@ namespace synthesis_program.Views
                     // 初始化数据加载
                     LoadData();
                     IsInitialized = true;
+                    // 初始加载语言
+                    RefreshTexts();
                 }
             };
             DataContext = this;
@@ -60,7 +64,6 @@ namespace synthesis_program.Views
                     TagsList.Remove(selected);
                 }
             }
-            //LoadData();
         }
 
         private void ShowAsDialog()
@@ -96,14 +99,16 @@ namespace synthesis_program.Views
                     // 如果没有结果提示
                     if (!results.Any())
                     {
-                        MessageBox.Show("未找到匹配的记录", "提示",
+                        // 使用翻译方法
+                        MessageBox.Show(Misc.t("未找到匹配的记录"), Misc.t("提示"),
                                        MessageBoxButton.OK, MessageBoxImage.Information);
                     }
                 }
             }
             catch (SqlSugar.SqlSugarException ex)
             {
-                MessageBox.Show($"数据库查询失败：{ex.Message}", "错误",
+                // 使用翻译方法
+                MessageBox.Show($"{Misc.t("数据库查询失败")}：{ex.Message}", Misc.t("错误"),
                                MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
@@ -112,7 +117,8 @@ namespace synthesis_program.Views
         {
             if (tagsDataGrid.SelectedItem == null)
             {
-                MessageBox.Show("请先选择要编辑的记录");
+                // 使用翻译方法
+                MessageBox.Show(Misc.t("请先选择要编辑的记录"));
                 return;
             }
             // 切换编辑状态
@@ -138,6 +144,7 @@ namespace synthesis_program.Views
             addPage.SaveCompleted += () => LoadData();      //订阅新增成功事件
             this.NavigationService?.Navigate(addPage);
         }
+
         private async void SaveButton_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -153,13 +160,15 @@ namespace synthesis_program.Views
                         // 前端验证必填字段
                         if (string.IsNullOrWhiteSpace(item.MaterialId))
                         {
-                            MessageBox.Show("料号不能为空", "验证错误",
+                            // 使用翻译方法
+                            MessageBox.Show(Misc.t("料号不能为空"), Misc.t("验证错误"),
                                           MessageBoxButton.OK, MessageBoxImage.Warning);
                             return;
                         }
                         if (string.IsNullOrWhiteSpace(item.MachineKind))
                         {
-                            MessageBox.Show("机型不能为空", "验证错误",
+                            // 使用翻译方法
+                            MessageBox.Show(Misc.t("机型不能为空"), Misc.t("验证错误"),
                                           MessageBoxButton.OK, MessageBoxImage.Warning);
                             return;
                         }
@@ -171,13 +180,15 @@ namespace synthesis_program.Views
                         {
                             if (service.SequenceExists(sequenceNo))
                             {
-                                MessageBox.Show($"序列号 {sequenceNo} 已存在", "验证失败",
+                                // 使用翻译方法
+                                MessageBox.Show($"{Misc.t("序列号")} {sequenceNo} {Misc.t("已存在")}", Misc.t("验证失败"),
                                               MessageBoxButton.OK, MessageBoxImage.Error);
                                 return;
                             }
                             if (service.BatchNoExists(item.BatchNo.Trim()))
                             {
-                                MessageBox.Show($"批号 {item.BatchNo.Trim()} 已存在", "验证失败",
+                                // 使用翻译方法
+                                MessageBox.Show($"{Misc.t("批号")} {item.BatchNo.Trim()} {Misc.t("已存在")}", Misc.t("验证失败"),
                                               MessageBoxButton.OK, MessageBoxImage.Error);
                                 return;
                             }
@@ -191,12 +202,14 @@ namespace synthesis_program.Views
                         {
                             if (service.InsertTag(item))
                             {
-                                MessageBox.Show("添加成功", "提示",
+                                // 使用翻译方法
+                                MessageBox.Show(Misc.t("添加成功"), Misc.t("提示"),
                                               MessageBoxButton.OK, MessageBoxImage.Information);
                             }
                             else
                             {
-                                MessageBox.Show("添加失败", "错误",
+                                // 使用翻译方法
+                                MessageBox.Show(Misc.t("添加失败"), Misc.t("错误"),
                                               MessageBoxButton.OK, MessageBoxImage.Error);
                             }
                         }
@@ -207,7 +220,8 @@ namespace synthesis_program.Views
                         {
                             if (!service.CheckRepeatSequenceNoStart(item.SequenceNoStart, item.Id))
                             {
-                                MessageBox.Show($"序列号 {item.MaterialId} 已存在", "验证失败",
+                                // 使用翻译方法
+                                MessageBox.Show($"{Misc.t("序列号")} {item.MaterialId} {Misc.t("已存在")}", Misc.t("验证失败"),
                                               MessageBoxButton.OK, MessageBoxImage.Error);
                                 LoadData();
                                 return;
@@ -218,18 +232,21 @@ namespace synthesis_program.Views
                             // 执行更新
                             if (!service.UpdateTag(item))
                             {
-                                MessageBox.Show($"更新记录ID:{item.Id}失败");
+                                // 使用翻译方法
+                                MessageBox.Show($"{Misc.t("更新记录ID")}:{item.Id}{Misc.t("失败")}");
                             }
                         }
                     }
                 }
 
-                MessageBox.Show($"成功保存记录");
+                // 使用翻译方法
+                MessageBox.Show(Misc.t("成功保存记录"));
                 _isEditing = false;
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"保存失败：{ex.Message}");
+                // 使用翻译方法
+                MessageBox.Show($"{Misc.t("保存失败")}：{ex.Message}");
             }
             LoadData();
         }
@@ -244,13 +261,71 @@ namespace synthesis_program.Views
             if (TagsListSingle.Id == 0)     //防止新增报错
             {
                 return;
-            } 
+            }
             var result = _tagService.GetLatestData(TagsListSingle);
             if (!TagsLatestList.Any(p => p.Id.Equals(result.Id)))
             {
                 TagsLatestList.Clear();
-
                 TagsLatestList.Add(result);
+            }
+        }
+
+        // 实现语言刷新接口
+        public void RefreshTexts()
+        {
+            // 刷新页面标题
+            this.Title = Misc.t("标签管理");
+
+            // 刷新搜索框提示
+            searchBox.Tag = Misc.t("输入料号或创建人");
+
+            // 刷新按钮文本
+            SearchButton.Content = Misc.t("查询");
+            AddButton.Content = Misc.t("新增");
+            DeleteButton.Content = Misc.t("删除");
+            EditButton.Content = Misc.t("修改");
+            SaveButton.Content = Misc.t("保存");
+
+            // 刷新第一个DataGrid列标题
+            if (tagsDataGrid.Columns.Count > 0)
+            {
+                tagsDataGrid.Columns[0].Header = Misc.t("ID");
+                tagsDataGrid.Columns[1].Header = Misc.t("机型");
+                tagsDataGrid.Columns[2].Header = Misc.t("生产批号");
+                tagsDataGrid.Columns[3].Header = Misc.t("批量");
+                tagsDataGrid.Columns[4].Header = Misc.t("版本");
+                tagsDataGrid.Columns[5].Header = Misc.t("整机料号");
+                tagsDataGrid.Columns[6].Header = Misc.t("生产编号开始");
+                tagsDataGrid.Columns[7].Header = Misc.t("生产编号结束");
+                tagsDataGrid.Columns[8].Header = Misc.t("模板地址");
+                tagsDataGrid.Columns[9].Header = Misc.t("序列号已生成");
+                tagsDataGrid.Columns[10].Header = Misc.t("关联机型");
+                tagsDataGrid.Columns[11].Header = Misc.t("创建人");
+                tagsDataGrid.Columns[12].Header = Misc.t("创建时间");
+                tagsDataGrid.Columns[13].Header = Misc.t("修改人");
+                tagsDataGrid.Columns[14].Header = Misc.t("修改时间");
+                tagsDataGrid.Columns[15].Header = Misc.t("备注");
+            }
+
+            // 刷新第二个DataGrid列标题
+            if (tagsLatestData.Columns.Count > 0)
+            {
+                tagsLatestData.Columns[0].Header = Misc.t("ID");
+                tagsLatestData.Columns[1].Header = Misc.t("机型");
+                tagsLatestData.Columns[2].Header = Misc.t("生产批号");
+                tagsLatestData.Columns[3].Header = Misc.t("批量");
+                tagsLatestData.Columns[4].Header = Misc.t("版本");
+                tagsLatestData.Columns[5].Header = Misc.t("整机料号");
+                tagsLatestData.Columns[6].Header = Misc.t("生产编号开始");
+                tagsLatestData.Columns[7].Header = Misc.t("生产编号结束");
+                tagsLatestData.Columns[8].Header = Misc.t("模板地址");
+                tagsLatestData.Columns[9].Header = Misc.t("序列号已生成");
+                tagsLatestData.Columns[10].Header = Misc.t("关联机型");
+                tagsLatestData.Columns[11].Header = Misc.t("创建人");
+                tagsLatestData.Columns[12].Header = Misc.t("创建时间");
+                tagsLatestData.Columns[13].Header = Misc.t("修改人");
+                tagsLatestData.Columns[14].Header = Misc.t("修改时间");
+                tagsLatestData.Columns[15].Header = Misc.t("备注");
             }
         }
     }

@@ -31,7 +31,7 @@
                 <MenuItem x:Name="DirectRate" IsEnabled="False" Header="直通率站点维护" Click="DirectConfig_Click"/>
             </MenuItem>
             <MenuItem x:Name="Setting"  Header="设置" Height="26" Width="65" Margin="3,0" DockPanel.Dock="Right">
-                <MenuItem x:Name="Language" IsEnabled="False" Header="VI" Click="ChangeLanguage_Click"/>
+                <MenuItem x:Name="Language" IsEnabled="True" Header="中文" Click="ChangeLanguage_Click"/>
             </MenuItem>
 
         </Menu>

@@ -1,7 +1,6 @@
 ﻿using HtsCommon.DBMySql8;
 using MiscApi;
 using synthesis_program.Service;
-using synthesis_program.Tools;
 using synthesis_program.Views;
 using System;
 using System.IO;
@@ -39,8 +38,8 @@ namespace synthesis_program
                 {
                     if (EnvArgs[0] == "UserID" && EnvArgs[1] == "UserPwd")
                     {
-                        EnvArgs[0] = MiscApi.Misc.GetProfile(myDebugCfg, "CONFIG", "UserID", "");
-                        EnvArgs[1] = MiscApi.Misc.GetProfile(myDebugCfg, "CONFIG", "UserPwd", "");
+                        EnvArgs[0] = Misc.GetProfile(myDebugCfg, "CONFIG", "UserID", "");
+                        EnvArgs[1] = Misc.GetProfile(myDebugCfg, "CONFIG", "UserPwd", "");
                     }
                 }
                 if (!HtsDB.Init(EnvArgs))
