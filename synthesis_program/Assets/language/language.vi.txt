@@ -47,3 +47,22 @@ Cập nhật ID bản ghi
 Thất bại
 Lưu bản ghi thành công
 Lưu thất bại
+Thêm bản ghi sản xuất
+Loại máy：
+Số lô sản xuất：
+Lượng sản xuất：
+Phiên bản：
+Mã vật liệu máy hoàn chỉnh：
+Mã sản xuất bắt đầu：
+Mã sản xuất kết thúc：
+Địa chỉ mẫu：
+Mã seri đã tạo：
+Loại máy liên quan：
+Ghi chú：
+Lưu
+Hủy
+Số lô sản xuất không được để trống
+Mã sản xuất bắt đầu không được để trống
+Thêm bản ghi thành công
+Thêm bản ghi thất bại, vui lòng thử lại
+Lỗi xảy ra khi lưu

@@ -1,172 +1,122 @@
-﻿using System.Windows;
-using System.Windows.Controls;
+﻿using MiscApi;
+using synthesis_program.Interface;
 using synthesis_program.Models;
 using synthesis_program.Service;
-using Microsoft.Win32;
+using synthesis_program.Tools;
 using System;
+using System.Windows;
+using System.Windows.Controls;
 
 namespace synthesis_program.Views
 {
-    public partial class AddRecordPage : Page
+    // 实现语言刷新接口
+    public partial class AddRecordPage : Page, ILanguageRefreshable
     {
+        public event Action SaveCompleted; // 保存完成事件
         private readonly TagService _tagService = new TagService();
-        public event Action SaveCompleted;
-        // 文件类型过滤器
-        private const string ImageFilter =
-            "图像文件|*.jpg;*.jpeg;*.png;*.bmp|所有文件|*.*";
-        private const string TemplateFilter =
-            "模板文件|*.qdf;*.tpl;*.template|所有文件|*.*";
+        public TagsModel CurrentTag { get; set; } = new TagsModel();
+
         public AddRecordPage()
         {
             InitializeComponent();
+            DataContext = this;
+            Loaded += (s, e) =>
+            {
+                // 初始化语言
+                RefreshTexts();
+                // 初始化默认值
+                CurrentTag.Creater = Environment.UserName;
+                CurrentTag.CreateTime = DateTime.Now;
+            };
         }
 
         private void SaveButton_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                //if (!System.IO.File.Exists(txtPicture.Text))
-                //{
-                //    MessageBox.Show("图纸文件不存在！");
-                //    return;
-                //}
-
-                // 第一步：前端验证必填字段
-                if (string.IsNullOrWhiteSpace(txtMaterialId.Text))
+                // 验证必填字段
+                if (string.IsNullOrWhiteSpace(CurrentTag.MachineKind))
                 {
-                    MessageBox.Show("料号不能为空", "验证错误",
-                                  MessageBoxButton.OK, MessageBoxImage.Warning);
-                    return;
-                }
-                if (string.IsNullOrWhiteSpace(txtMachineKind.Text))
-                {
-                    MessageBox.Show("机型不能为空", "验证错误",
+                    MessageBox.Show(Misc.t("机型不能为空"), Misc.t("验证错误"),
                                   MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
                 }
 
-                ////检查序列号格式
-                //if (!txtSequenceNo.Text.Contains('-'))
-                //{
-                //    MessageBox.Show("序列号格式不正确", "序列号错误",
-                //                  MessageBoxButton.OK, MessageBoxImage.Warning);
-                //    return;
-                //}
-
-                string sequenceNo = txtSequenceNoStart.Text.Trim();
-
-                // 第二步：业务层重复性检查（防止绕过前端提交重复数据）
-                using (var service = new TagService())
+                if (string.IsNullOrWhiteSpace(CurrentTag.BatchNo))
                 {
-                    if (service.SequenceExists(sequenceNo))
-                    {
-                        MessageBox.Show($"序列号 {sequenceNo} 已存在", "验证失败",
-                                      MessageBoxButton.OK, MessageBoxImage.Error);
-                        return;
-                    }
-                    if (service.BatchNoExists(txtBatchNo.Text.Trim()))
-                    {
-                        MessageBox.Show($"批号 {txtBatchNo.Text.Trim()} 已存在", "验证失败",
-                                      MessageBoxButton.OK, MessageBoxImage.Error);
-                        return;
-                    }
-
+                    MessageBox.Show(Misc.t("生产批号不能为空"), Misc.t("验证错误"),
+                                  MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
                 }
 
-                //string[] sequenceStr = txtSequenceNo.Text.Split('-');
-                //string sequenceText = string.Empty;
-                //foreach (var p in sequenceStr)
-                //{
-                //    sequenceText += p;
-                //}
-
-                // 第三步：构建实体
-                var newTag = new TagsModel
+                if (string.IsNullOrWhiteSpace(CurrentTag.SequenceNoStart))
                 {
-                    MachineKind = txtMachineKind.Text?.Trim(),
-                    BatchNo = txtBatchNo.Text?.Trim(),
-                    BatchCount = txtBatchCount.Text?.Trim(),
-                    Version = txtVersion.Text?.Trim(),
-                    MaterialId = txtMaterialId.Text?.Trim(),
-                    SequenceNoStart = txtSequenceNoStart.Text?.Trim(),
-                    SequenceNoEnd = txtSequenceNoEnd.Text?.Trim(),
-                    ModelAddress = txtModelAddress.Text?.Trim(),
-                    ConnectMachine = txtConnectMachine.Text?.Trim(),
-                    Remark = txtRemark.Text?.Trim(),
-                    IsValid = 1,
-                    IsCreated = IsCreated.IsChecked == true ? 1 : 0,
-                    Creater = txtCreater.Text?.Trim(),
-                    CreateTime = DateTime.Now,
-                    EditTime = DateTime.Now
-                };
+                    MessageBox.Show(Misc.t("生产编号开始不能为空"), Misc.t("验证错误"),
+                                  MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
 
-                //var newSequence = new SequenceModel
-                //{
-                //    SequenceNo = txtSequenceNo.Text?.Trim(),
-                //    UpdateRate = txtUpdateRate.Text?.Trim(),
-                //    NumberIsEnd = NumberIsEnd.IsChecked == true ? 1 : 0,
-                //    Remark = txtRemark.Text?.Trim(),
-                //    CreateTime = DateTime.Now,
-                //    EditTime = DateTime.Now,
-                //    isValid = 1
-                //};
-
-                // 第四步：保存数据
-                using (var service = new TagService())
+                // 检查批号是否已存在
+                if (_tagService.BatchNoExists(CurrentTag.BatchNo.Trim()))
                 {
-                    if (service.InsertTag(newTag))
-                    {
-                        SaveCompleted?.Invoke();
-                        MessageBox.Show("添加成功", "提示",
-                                      MessageBoxButton.OK, MessageBoxImage.Information);
-                        NavigationService?.GoBack();
-                    }
-                    
+                    MessageBox.Show($"{Misc.t("生产批号")} {CurrentTag.BatchNo} {Misc.t("已存在")}",
+                                  Misc.t("保存失败"), MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+
+                // 设置默认值
+                CurrentTag.EditTime = DateTime.Now;
+                CurrentTag.Editor = Environment.UserName;
+                CurrentTag.IsValid = 1;
+
+                // 保存数据
+                if (_tagService.InsertTag(CurrentTag))
+                {
+                    MessageBox.Show(Misc.t("新增记录成功"), Misc.t("提示"),
+                                  MessageBoxButton.OK, MessageBoxImage.Information);
+                    SaveCompleted?.Invoke(); // 触发保存完成事件
+                    NavigationService?.GoBack(); // 返回上一页
+                }
+                else
+                {
+                    MessageBox.Show(Misc.t("新增记录失败，请重试"), Misc.t("错误"),
+                                  MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"保存失败：{ex.Message}", "错误",
+                MessageBox.Show($"{Misc.t("保存时发生错误")}：{ex.Message}", Misc.t("错误"),
                               MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
         private void CancelButton_Click(object sender, RoutedEventArgs e)
         {
-            NavigationService?.GoBack();
+            NavigationService?.GoBack(); // 返回上一页
         }
 
-        
-
-        //private void BrowsePicture_Click(object sender, RoutedEventArgs e)
-        //{
-        //    var dialog = new OpenFileDialog
-        //    {
-        //        Title = "选择图纸文件",
-        //        Filter = ImageFilter,
-        //        CheckFileExists = true
-        //    };
-
-        //    if (dialog.ShowDialog() == true)
-        //    {
-        //        txtPicture.Text = dialog.FileName;
-        //    }
-        //}
-
-        private void BrowseModel_Click(object sender, RoutedEventArgs e)
+        // 实现语言刷新接口
+        public void RefreshTexts()
         {
-            var dialog = new OpenFileDialog
-            {
-                Title = "选择模板文件",
-                Filter = TemplateFilter,
-                CheckFileExists = true
-            };
+            // 页面标题
+            this.Title = Misc.t("新增生产记录");
 
-            if (dialog.ShowDialog() == true)
-            {
-                txtModelAddress.Text = dialog.FileName;
-            }
+            // 表单标签
+            lblMachineKind.Content = Misc.t("机型：");
+            lblBatchNo.Content = Misc.t("生产批号：");
+            lblBatchCount.Content = Misc.t("批量：");
+            lblVersion.Content = Misc.t("版本：");
+            lblMaterialId.Content = Misc.t("整机料号：");
+            lblSequenceStart.Content = Misc.t("生产编号开始：");
+            lblSequenceEnd.Content = Misc.t("生产编号结束：");
+            lblModelAddress.Content = Misc.t("模板地址：");
+            lblIsCreated.Content = Misc.t("序列号已生成：");
+            lblConnectMachine.Content = Misc.t("关联机型：");
+            lblRemark.Content = Misc.t("备注：");
+
+            // 按钮文本
+            SaveButton.Content = Misc.t("保存");
+            CancelButton.Content = Misc.t("取消");
         }
-
     }
 }
