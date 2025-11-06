@@ -243,8 +243,9 @@ namespace synthesis_program.Service
                     if (prod_type != "A05F" && prod_type != "V05F")
                     {
                         if (passRateModel.finished_stamp != null)
-                            conditions.Add($@"t.finished_stamp BETWEEN {passRateModel.finished_stamp.ObjToDate().ToString("yyyy-MM-dd 8:30:00")} AND {passRateModel.finished_stamp.ObjToDate().ToString("yyyy-MM-dd 20:30:00")}");
+                            conditions.Add($@"t.finished_stamp BETWEEN '{passRateModel.finished_stamp.ObjToDate().ToString("yyyy-MM-dd 8:30:00")}' AND '{passRateModel.finished_stamp.ObjToDate().ToString("yyyy-MM-dd 20:30:00")}'");
                         productPassRateViewModel.Shift = "白班";
+                        whereClause = conditions.Any() ? "WHERE " + string.Join(" AND ", conditions) : "";
                         productPassRateViewModel = await GetProductPassRate(sqlServerDb, whereClause, parameters, productPassRateViewModel, passRateModel, CosmeticNoPassCount, PerformNoPassCount, prod_type, dtKanBan).ConfigureAwait(false);
                         passrateModelList.Add(productPassRateViewModel);
                     }
@@ -521,7 +522,7 @@ namespace synthesis_program.Service
             var errorItem = await sqlServerDb.Ado.SqlQueryAsync<InterimModel>(sqlError, parameters.ToArray()).ConfigureAwait(false);
 
             ///区分A05F和其他机型
-            if (errorItem.Count > 0 && (passRateModel.prod_type.ToUpper() != "A05F" && passRateModel.prod_type.ToUpper() != "V05F"))
+            if (passRateModel.prod_type.ToUpper() != "A05F" && passRateModel.prod_type.ToUpper() != "V05F")
             {
                 string timeType = "timeType"; //dtKanBan列timeType
                 string NGcode = "code";     //dtKanBan列code
@@ -530,47 +531,47 @@ namespace synthesis_program.Service
                 int count1 = errorItem.FindAll(p => p.value1 == "性能不良").Count();
                 if (count1 > 0)
                 {
-                    productPassRateViewModel.Top1Capcity = errorItem[0].value2;
-                    productPassRateViewModel.RepairReason1 = errorItem[0].value4;
-                    productPassRateViewModel.Count1 = errorItem[0].value3;
-                    PerformNoPassCount += Convert.ToInt32(errorItem[0].value3);
+                    productPassRateViewModel.Top1Capcity = errorItem.Count > 0 ? errorItem[0].value2 : "";
+                    productPassRateViewModel.RepairReason1 = errorItem.Count > 0 ? errorItem[0].value4 : "";
+                    productPassRateViewModel.Count1 = errorItem.Count > 0 ? errorItem[0].value3 : "";
+                    PerformNoPassCount += Convert.ToInt32(errorItem.Count > 0 ? errorItem[0].value3 : "0");
                 }
                 if (count1 > 1)
                 {
-                    productPassRateViewModel.Top2Capcity = errorItem[1].value2;
-                    productPassRateViewModel.RepairReason2 = errorItem[1].value4;
-                    productPassRateViewModel.Count2 = errorItem[1].value3;
-                    PerformNoPassCount += Convert.ToInt32(errorItem[1].value3);
+                    productPassRateViewModel.Top2Capcity = errorItem.Count > 0 ? errorItem[1].value2 : "";
+                    productPassRateViewModel.RepairReason2 = errorItem.Count > 0 ? errorItem[1].value4 : "";
+                    productPassRateViewModel.Count2 = errorItem.Count > 0 ? errorItem[1].value3 : "";
+                    PerformNoPassCount += Convert.ToInt32(errorItem.Count > 0 ? errorItem[1].value3 : "");
                 }
                 if (count1 > 2)
                 {
-                    productPassRateViewModel.Top3Capcity = errorItem[2].value2;
-                    productPassRateViewModel.RepairReason3 = errorItem[2].value4;
-                    productPassRateViewModel.Count3 = errorItem[2].value3;
-                    PerformNoPassCount += Convert.ToInt32(errorItem[2].value3);
+                    productPassRateViewModel.Top3Capcity = errorItem.Count > 0 ? errorItem[2].value2 : "";
+                    productPassRateViewModel.RepairReason3 = errorItem.Count > 0 ? errorItem[2].value4 : "";
+                    productPassRateViewModel.Count3 = errorItem.Count > 0 ? errorItem[2].value3 : "";
+                    PerformNoPassCount += Convert.ToInt32(errorItem.Count > 0 ? errorItem[2].value3 : "");
                 }
 
                 int count2 = errorItem.FindAll(p => p.value1 == "外观不良").Count();
                 if (count2 > 0)
                 {
-                    productPassRateViewModel.Top1Surface = errorItem[count1 + 0].value2;
-                    productPassRateViewModel.RepairReason_1 = errorItem[count1 + 0].value4;
-                    productPassRateViewModel.Count_1 = errorItem[count1 + 0].value3;
-                    CosmeticNoPassCount += Convert.ToInt32(errorItem[count1 + 0].value3);
+                    productPassRateViewModel.Top1Surface = errorItem.Count > (count1 + 0) ? errorItem[count1 + 0].value2 : "";
+                    productPassRateViewModel.RepairReason_1 = errorItem.Count > (count1 + 0) ? errorItem[count1 + 0].value4 : "";
+                    productPassRateViewModel.Count_1 = errorItem.Count > (count1 + 0) ? errorItem[count1 + 0].value3 : "";
+                    CosmeticNoPassCount += Convert.ToInt32(errorItem.Count > (count1 + 0) ? errorItem[count1 + 0].value3 : "");
                 }
                 if (count2 > 1)
                 {
-                    productPassRateViewModel.Top2Surface = errorItem[count1 + 1].value2;
-                    productPassRateViewModel.RepairReason_2 = errorItem[count1 + 1].value4;
-                    productPassRateViewModel.Count_2 = errorItem[count1 + 1].value3;
-                    CosmeticNoPassCount += Convert.ToInt32(errorItem[count1 + 1].value3);
+                    productPassRateViewModel.Top2Surface = errorItem.Count > (count1 + 1) ? errorItem[count1 + 1].value2 : "";
+                    productPassRateViewModel.RepairReason_2 = errorItem.Count > (count1 + 1) ? errorItem[count1 + 1].value4 : "";
+                    productPassRateViewModel.Count_2 = errorItem.Count > (count1 + 1) ? errorItem[count1 + 1].value3 : "";
+                    CosmeticNoPassCount += Convert.ToInt32(errorItem.Count > (count1 + 1) ? errorItem[count1 + 1].value3 : "");
                 }
                 if (count2 > 2)
                 {
-                    productPassRateViewModel.Top3Surface = errorItem[count1 + 2].value2;
-                    productPassRateViewModel.RepairReason_3 = errorItem[count1 + 2].value4;
-                    productPassRateViewModel.Count_3 = errorItem[count1 + 2].value3;
-                    CosmeticNoPassCount += Convert.ToInt32(errorItem[count1 + 2].value3);
+                    productPassRateViewModel.Top3Surface = errorItem.Count > (count1 + 2) ? errorItem[count1 + 2].value2 : "";
+                    productPassRateViewModel.RepairReason_3 = errorItem.Count > (count1 + 2) ? errorItem[count1 + 2].value4 : "";
+                    productPassRateViewModel.Count_3 = errorItem.Count > (count1 + 2) ? errorItem[count1 + 2].value3 : "";
+                    CosmeticNoPassCount += Convert.ToInt32(errorItem.Count > (count1 + 2) ? errorItem[count1 + 2].value3 : "");
                 }
 
             }
