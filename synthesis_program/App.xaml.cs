@@ -30,6 +30,8 @@ namespace synthesis_program
             }
 
             base.OnStartup(e);
+            // 启动时强制设置为中文
+            Misc.SetLanguage("cn");
             string[] EnvArgs = e.Args;
             try
             {

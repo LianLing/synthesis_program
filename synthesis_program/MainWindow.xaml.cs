@@ -193,7 +193,7 @@ namespace synthesis_program.Views
             Misc.SetLanguage(newLang);
 
             // 更新语言菜单显示文本
-            Language.Header = newLang == "vi" ? "Tiếng Việt" : "中文";
+            Language.Header = newLang == "vi" ? "中文" : "Tiếng Việt";
 
             // 刷新界面语言
             RefreshAllTexts();
