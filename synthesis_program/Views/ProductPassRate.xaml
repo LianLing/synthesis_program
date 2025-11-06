@@ -1,7 +1,7 @@
 ﻿<Page x:Class="synthesis_program.Views.ProductPassRate"
-          xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-          xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-          Background="#FFEBEBEB">
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      Background="#FFEBEBEB">
     <Grid Margin="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -14,7 +14,7 @@
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                 <!-- 机型 -->
                 <StackPanel Margin="5,0">
-                    <TextBlock Text="机型" Margin="0 0 0 2"/>
+                    <TextBlock x:Name="tbMachineKind" Margin="0 0 0 2"/>
                     <ComboBox x:Name="prod_type" Width="156" Height="26" FontSize="14"
                                   BorderBrush="#FFCCCCCC" SelectedIndex="0"
                                   IsEditable="True" Loaded="ModelComboBox_Loaded"
@@ -23,14 +23,13 @@
                     </ComboBox>
                 </StackPanel>
 
-                
-
                 <StackPanel Margin="50,15,10,5" VerticalAlignment="Center">
                     <DatePicker x:Name="datePick" SelectedDateChanged="datePick_SelectedDateChanged"/>
                 </StackPanel>
+
                 <!-- 工单 -->
                 <StackPanel Margin="10,5">
-                    <TextBlock Text="工单" Margin="0 0 0 2"/>
+                    <TextBlock x:Name="tbMo" Margin="0 0 0 2"/>
                     <ComboBox x:Name="mo" Width="120" Height="26" FontSize="14"
                             BorderBrush="#FFCCCCCC" SelectedIndex="0"
                             IsEditable="True"
@@ -40,30 +39,28 @@
 
                 <!-- 线别 -->
                 <StackPanel Margin="10,5">
-                    <TextBlock Text="线别" Margin="0 0 0 2"/>
+                    <TextBlock x:Name="tbLine" Margin="0 0 0 2"/>
                     <ComboBox x:Name="line" Width="120" Height="26" FontSize="14"
-            BorderBrush="#FFCCCCCC" SelectedIndex="0"
-            IsEditable="True"
-            ItemsSource="{Binding AllLine}" >
+                            BorderBrush="#FFCCCCCC" SelectedIndex="0"
+                            IsEditable="True"
+                            ItemsSource="{Binding AllLine}" >
                     </ComboBox>
                 </StackPanel>
-                
+
                 <!-- 班组 -->
                 <StackPanel Margin="10,0">
-                    <TextBlock Text="班组" Margin="0 0 0 2"/>
+                    <TextBlock x:Name="tbTeam" Margin="0 0 0 2"/>
                     <ComboBox x:Name="team" Width="100" Height="26" FontSize="14"
                                   BorderBrush="#FFCCCCFF" SelectedIndex="0" ItemsSource="{Binding Teams}"/>
                 </StackPanel>
 
-                
                 <!-- 查询按钮 -->
-                <Button Content="查询" Margin="20,0,0,0" Padding="20,5"
+                <Button x:Name="btnQuery" Margin="20,0,0,0" Padding="20,5"
                             Background="#FFCCCCCC" Foreground="White"
                             FontWeight="Bold" Click="QueryButton_Click" Height="35"/>
 
-                
-
-                <Button Content="导出" Margin="30,0,0,0" Padding="20,5"
+                <!-- 导出按钮 -->
+                <Button x:Name="btnExport" Margin="30,0,0,0" Padding="20,5"
                             Background="#FFCCCCCC" Foreground="White"
                             FontWeight="Bold" Click="ExportButton_Click" Height="35"/>
             </StackPanel>
@@ -75,29 +72,25 @@
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
-            
-
             <!-- 数据区域 -->
-
             <Border Grid.Column="1" Margin="10,0,0,81" Background="White"
-        BorderBrush="#FFCCCCCC" BorderThickness="1">
+                    BorderBrush="#FFCCCCCC" BorderThickness="1">
                 <!-- 添加滚动容器 -->
                 <ScrollViewer VerticalScrollBarVisibility="Auto" 
-                  HorizontalScrollBarVisibility="Auto"
-                  Padding="0">
+                              HorizontalScrollBarVisibility="Auto"
+                              Padding="0">
                     <!-- 数据表格 -->
                     <DataGrid Grid.Row="1" 
-                x:Name="rateDataGrid"
-                AutoGenerateColumns="False"
-                CanUserAddRows="False"
-                SelectionMode="Single"
-                SelectionUnit="FullRow"
-                RowHeight="25"
-                FontSize="15"
-                ItemsSource="{Binding SourceList}"
-                SelectedItem="{Binding RateListSingle}"
-                Margin="0,0,0,0">
-                        <!-- 移除底部margin -->
+                              x:Name="rateDataGrid"
+                              AutoGenerateColumns="False"
+                              CanUserAddRows="False"
+                              SelectionMode="Single"
+                              SelectionUnit="FullRow"
+                              RowHeight="25"
+                              FontSize="15"
+                              ItemsSource="{Binding SourceList}"
+                              SelectedItem="{Binding RateListSingle}"
+                              Margin="0,0,0,0">
                         <DataGrid.Resources>
                             <Style TargetType="DataGridColumnHeader">
                                 <Setter Property="HorizontalContentAlignment" Value="Center"/>
@@ -108,52 +101,51 @@
                         </DataGrid.Resources>
 
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="月份" Binding="{Binding Month}" Width="Auto"/>
-                            <DataGridTextColumn Header="周别" Binding="{Binding Week}" Width="Auto"/>
-                            <DataGridTextColumn Header="日期" Binding="{Binding Date}" Width="Auto"/>
-                            <DataGridTextColumn Header="线体" Binding="{Binding Line}" Width="Auto"/>
-                            <DataGridTextColumn Header="班别" Binding="{Binding Shift}" Width="Auto"/>
-                            <DataGridTextColumn Header="IPQC" Binding="{Binding IPQC}" Width="Auto"/>
-                            <DataGridTextColumn Header="PQE" Binding="{Binding PQE}" Width="Auto"/>
-                            <DataGridTextColumn Header="制令号" Binding="{Binding Monumber}" Width="Auto"/>
-                            <DataGridTextColumn Header="状态" Binding="{Binding Status}" Width="Auto"/>
-                            <DataGridTextColumn Header="机型" Binding="{Binding MachineKind}" Width="Auto"/>
-                            <DataGridTextColumn Header="版型" Binding="{Binding Version}" Width="Auto"/>
-                            <DataGridTextColumn Header="直通率目标" Binding="{Binding TargetRate}" Width="Auto"/>
-                            <DataGridTextColumn Header="产品直通率" Binding="{Binding pass_rate}" Width="Auto"/>
-                            <DataGridTextColumn Header="检验数" Binding="{Binding CheckCount}" Width="Auto"/>
-                            <DataGridTextColumn Header="外观合格数" Binding="{Binding CosmeticPassCount}" Width="Auto"/>
-                            <DataGridTextColumn Header="性能不良数" Binding="{Binding ErrorCount}" Width="Auto"/>
-                            <DataGridTextColumn Header="外观不良数" Binding="{Binding CosmeticErrorCount}" Width="Auto"/>
-                            <DataGridTextColumn Header="TOP1（性能）" Binding="{Binding Top1Capcity}" Width="Auto"/>
-                            <DataGridTextColumn Header="修理原因" Binding="{Binding RepairReason1}" Width="Auto"/>
-                            <DataGridTextColumn Header="数量" Binding="{Binding Count1}" Width="Auto"/>
-                            <DataGridTextColumn Header="TOP2（性能）" Binding="{Binding Top2Capcity}" Width="Auto"/>
-                            <DataGridTextColumn Header="修理原因" Binding="{Binding RepairReason2}" Width="Auto"/>
-                            <DataGridTextColumn Header="数量" Binding="{Binding Count2}" Width="Auto"/>
-                            <DataGridTextColumn Header="TOP3（性能）" Binding="{Binding Top3Capcity}" Width="Auto"/>
-                            <DataGridTextColumn Header="修理原因" Binding="{Binding RepairReason3}" Width="Auto"/>
-                            <DataGridTextColumn Header="数量" Binding="{Binding Count3}" Width="Auto"/>
-                            <DataGridTextColumn Header="TOP1（外观）" Binding="{Binding Top1Surface}" Width="Auto"/>
-                            <DataGridTextColumn Header="修理原因" Binding="{Binding RepairReason_1}" Width="Auto"/>
-                            <DataGridTextColumn Header="数量" Binding="{Binding Count_1}" Width="Auto"/>
-                            <DataGridTextColumn Header="TOP2（外观）" Binding="{Binding Top2Surface}" Width="Auto"/>
-                            <DataGridTextColumn Header="修理原因" Binding="{Binding RepairReason_2}" Width="Auto"/>
-                            <DataGridTextColumn Header="数量" Binding="{Binding Count_2}" Width="Auto"/>
-                            <DataGridTextColumn Header="TOP3（外观）" Binding="{Binding Top3Surface}" Width="Auto"/>
-                            <DataGridTextColumn Header="修理原因" Binding="{Binding RepairReason_3}" Width="Auto"/>
-                            <DataGridTextColumn Header="数量" Binding="{Binding Count_3}" Width="Auto"/>
+                            <DataGridTextColumn x:Name="colMonth" Binding="{Binding Month}" Width="Auto"/>
+                            <DataGridTextColumn x:Name="colWeek" Binding="{Binding Week}" Width="Auto"/>
+                            <DataGridTextColumn x:Name="colDate" Binding="{Binding Date}" Width="Auto"/>
+                            <DataGridTextColumn x:Name="colLine" Binding="{Binding Line}" Width="Auto"/>
+                            <DataGridTextColumn x:Name="colShift" Binding="{Binding Shift}" Width="Auto"/>
+                            <DataGridTextColumn x:Name="colIPQC" Binding="{Binding IPQC}" Width="Auto"/>
+                            <DataGridTextColumn x:Name="colPQE" Binding="{Binding PQE}" Width="Auto"/>
+                            <DataGridTextColumn x:Name="colMonumber" Binding="{Binding Monumber}" Width="Auto"/>
+                            <DataGridTextColumn x:Name="colStatus" Binding="{Binding Status}" Width="Auto"/>
+                            <DataGridTextColumn x:Name="colMachineKind" Binding="{Binding MachineKind}" Width="Auto"/>
+                            <DataGridTextColumn x:Name="colVersion" Binding="{Binding Version}" Width="Auto"/>
+                            <DataGridTextColumn x:Name="colTargetRate" Binding="{Binding TargetRate}" Width="Auto"/>
+                            <DataGridTextColumn x:Name="colPassRate" Binding="{Binding pass_rate}" Width="Auto"/>
+                            <DataGridTextColumn x:Name="colCheckCount" Binding="{Binding CheckCount}" Width="Auto"/>
+                            <DataGridTextColumn x:Name="colCosmeticPassCount" Binding="{Binding CosmeticPassCount}" Width="Auto"/>
+                            <DataGridTextColumn x:Name="colErrorCount" Binding="{Binding ErrorCount}" Width="Auto"/>
+                            <DataGridTextColumn x:Name="colCosmeticErrorCount" Binding="{Binding CosmeticErrorCount}" Width="Auto"/>
+                            <DataGridTextColumn x:Name="colTop1Capcity" Binding="{Binding Top1Capcity}" Width="Auto"/>
+                            <DataGridTextColumn x:Name="colRepairReason1" Binding="{Binding RepairReason1}" Width="Auto"/>
+                            <DataGridTextColumn x:Name="colCount1" Binding="{Binding Count1}" Width="Auto"/>
+                            <DataGridTextColumn x:Name="colTop2Capcity" Binding="{Binding Top2Capcity}" Width="Auto"/>
+                            <DataGridTextColumn x:Name="colRepairReason2" Binding="{Binding RepairReason2}" Width="Auto"/>
+                            <DataGridTextColumn x:Name="colCount2" Binding="{Binding Count2}" Width="Auto"/>
+                            <DataGridTextColumn x:Name="colTop3Capcity" Binding="{Binding Top3Capcity}" Width="Auto"/>
+                            <DataGridTextColumn x:Name="colRepairReason3" Binding="{Binding RepairReason3}" Width="Auto"/>
+                            <DataGridTextColumn x:Name="colCount3" Binding="{Binding Count3}" Width="Auto"/>
+                            <DataGridTextColumn x:Name="colTop1Surface" Binding="{Binding Top1Surface}" Width="Auto"/>
+                            <DataGridTextColumn x:Name="colRepairReason_1" Binding="{Binding RepairReason_1}" Width="Auto"/>
+                            <DataGridTextColumn x:Name="colCount_1" Binding="{Binding Count_1}" Width="Auto"/>
+                            <DataGridTextColumn x:Name="colTop2Surface" Binding="{Binding Top2Surface}" Width="Auto"/>
+                            <DataGridTextColumn x:Name="colRepairReason_2" Binding="{Binding RepairReason_2}" Width="Auto"/>
+                            <DataGridTextColumn x:Name="colCount_2" Binding="{Binding Count_2}" Width="Auto"/>
+                            <DataGridTextColumn x:Name="colTop3Surface" Binding="{Binding Top3Surface}" Width="Auto"/>
+                            <DataGridTextColumn x:Name="colRepairReason_3" Binding="{Binding RepairReason_3}" Width="Auto"/>
+                            <DataGridTextColumn x:Name="colCount_3" Binding="{Binding Count_3}" Width="Auto"/>
                         </DataGrid.Columns>
                     </DataGrid>
                 </ScrollViewer>
             </Border>
 
             <Border Grid.Column="1" Margin="10,0,0,0" VerticalAlignment="Bottom" Background="White"
-BorderBrush="#FFCCCCCC" BorderThickness="1" Height="62">
-                <Label Name="lbl_warning"  Content="正在查询，请勿重复点击!" HorizontalAlignment="Center" VerticalAlignment="Center"  Width="200" Height="30" FontWeight="Bold" Foreground="Red"/>
-
+                    BorderBrush="#FFCCCCCC" BorderThickness="1" Height="62">
+                <Label x:Name="lblWarning"  Content="" HorizontalAlignment="Center" VerticalAlignment="Center"  
+                       Width="200" Height="30" FontWeight="Bold" Foreground="Red"/>
             </Border>
         </Grid>
     </Grid>
 </Page>
-    

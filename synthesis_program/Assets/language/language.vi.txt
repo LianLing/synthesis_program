@@ -66,3 +66,43 @@ Mã sản xuất bắt đầu không được để trống
 Thêm bản ghi thành công
 Thêm bản ghi thất bại, vui lòng thử lại
 Lỗi xảy ra khi lưu
+Loại máy
+Mã đơn hàng sản xuất
+Tên chuyền
+Nhóm làm việc
+Tìm kiếm
+Xuất dữ liệu
+Đang truy vấn, vui lòng không click lặp lại!
+Loại máy này chưa được bảo trì trạm
+Thông báo
+Không có dữ liệu để xuất!
+Tỷ lệ pass sản phẩm
+Báo cáo tỷ lệ pass
+Xuất thành công!
+Xuất thất bại
+Lỗi
+Vui lòng chọn loại máy trước!
+Tháng
+Tuần
+Ngày
+Chuyền sản xuất
+Ca làm việc
+IPQC
+PQE
+Mã lệnh sản xuất
+Trạng thái
+Phiên bản mẫu
+Mục tiêu tỷ lệ pass
+Tỷ lệ pass sản phẩm
+Số lượng kiểm tra
+Số lượng đạt chuẩn ngoại quan
+Số lượng lỗi hiệu suất
+Số lượng lỗi ngoại quan
+TOP1 (Hiệu suất)
+Lý do sửa chữa
+Số lượng
+TOP2 (Hiệu suất)
+TOP3 (Hiệu suất)
+TOP1 (Ngoại quan)
+TOP2 (Ngoại quan)
+TOP3 (Ngoại quan)
