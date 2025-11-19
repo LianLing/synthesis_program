@@ -31,10 +31,17 @@ namespace synthesis_program.Service
 
         //CServers servers = new CServers();
 
-        public void GetNewConn( string prod_type)
+        public void GetNewConn(string prod_type)
         {
             _db.Instance.Ado.Connection.Close();
             _db.Instance.Ado.Connection.ConnectionString = currentConnection + $"Database=hts_prod_{prod_type};";
+            _db.Instance.Ado.Connection.Open();
+        }
+
+        public void GetNewConnByPcs(string str)
+        {
+            _db.Instance.Ado.Connection.Close();
+            _db.Instance.Ado.Connection.ConnectionString = currentConnection + $"Database=hts_{str};";
             _db.Instance.Ado.Connection.Open();
         }
 
@@ -85,7 +92,7 @@ namespace synthesis_program.Service
             }
         }
 
-        public async Task<List<InterimModel>> QueryStations(string machineKind,string module,string process)
+        public async Task<List<InterimModel>> QueryStations(string machineKind, string module, string process)
         {
             try
             {
@@ -112,7 +119,7 @@ namespace synthesis_program.Service
         }
 
         //获取该机型下工单
-        public async Task<List<string>> QueryAllMoAsync(string prod_type,DateTime pickDate)
+        public async Task<List<string>> QueryAllMoAsync(string prod_type, DateTime pickDate)
         {
             try
             {
@@ -120,8 +127,8 @@ namespace synthesis_program.Service
                 string sql = $@"select distinct t.mo from prod_test_rcds t where t.finished_stamp >= '{pickDate.Date}' and t.finished_stamp < '{pickDate.AddDays(1)}'";
                 var dataTable = await _db.Instance.Ado.GetDataTableAsync(sql).ConfigureAwait(false);
                 return dataTable.Rows.Cast<DataRow>().Select(row => row["MO"].ToString()).ToList();
-                
-                
+
+
             }
             catch (Exception)
             {
@@ -174,7 +181,7 @@ namespace synthesis_program.Service
             }
         }
 
-        public async Task<List<ProductPassRateViewModel>> QueryPassRate(ProductPassRateModel passRateModel,string prod_type)
+        public async Task<List<ProductPassRateViewModel>> QueryPassRate(ProductPassRateModel passRateModel, string prod_type,string machineKind)
         {
             try
             {
@@ -186,7 +193,7 @@ namespace synthesis_program.Service
                 string timeType = "timeType"; //dtKanBan列timeType
                 string lineId = "prod_line";  //dtKanBan列prod_line
                 string extralCondition = string.Empty;  //适用GetKanBanInfo的额外条件
-                DataTable dataTable ;  //存放看板数据
+                DataTable dataTable;  //存放看板数据
                 ///看板不良:白班数量混合计算，夜班单独计算
 
                 ProductPassRateViewModel productPassRateViewModel = new ProductPassRateViewModel();
@@ -218,7 +225,7 @@ namespace synthesis_program.Service
                     if (!string.IsNullOrEmpty(passRateModel.station_curr))
                         conditions.Add($@"t.station_curr in {passRateModel.station_curr}");
 
-                   var kanBanConditions = new List<string>();
+                    var kanBanConditions = new List<string>();
 
                     string whereClause = string.Empty;
                     //conditions.Any() ? "WHERE " + string.Join(" AND ", conditions) : "";
@@ -237,7 +244,6 @@ namespace synthesis_program.Service
                      * 直通率 = 外观合格数 / 外观合格数 + 性能/外观不良数
                      */
                     DataTable dtKanBan = await GetKanNG(sqlServerDb, passRateModel);
-                    
 
                     // 查询当天外观合格数 = 合格数 + 不合格但二次流水正常的数量
                     if (prod_type != "A05F" && prod_type != "V05F")
@@ -245,6 +251,7 @@ namespace synthesis_program.Service
                         if (passRateModel.finished_stamp != null)
                             conditions.Add($@"t.finished_stamp BETWEEN '{passRateModel.finished_stamp.ObjToDate().ToString("yyyy-MM-dd 8:30:00")}' AND '{passRateModel.finished_stamp.ObjToDate().ToString("yyyy-MM-dd 20:30:00")}'");
                         productPassRateViewModel.Shift = "白班";
+                        productPassRateViewModel.MachineKind = machineKind;
                         whereClause = conditions.Any() ? "WHERE " + string.Join(" AND ", conditions) : "";
                         productPassRateViewModel = await GetProductPassRate(sqlServerDb, whereClause, parameters, productPassRateViewModel, passRateModel, CosmeticNoPassCount, PerformNoPassCount, prod_type, dtKanBan).ConfigureAwait(false);
                         passrateModelList.Add(productPassRateViewModel);
@@ -253,7 +260,7 @@ namespace synthesis_program.Service
                     {
                         if (dtKanBan.Rows.Count > 0)
                         {
-                            
+
                             if (dtKanBan.AsEnumerable().Any(row => row.Field<string>(timeType).Contains("白班")))
                             {
                                 foreach (DataRow row in dtKanBan.Rows)
@@ -282,14 +289,15 @@ namespace synthesis_program.Service
                                 if (passRateModel.finished_stamp != null)
                                     conditions.Add($@"t.finished_stamp BETWEEN '{passRateModel.finished_stamp.ObjToDate().ToString("yyyy-MM-dd 8:30:00")}' AND '{passRateModel.finished_stamp.ObjToDate().ToString("yyyy-MM-dd 20:30:00")}'");
                                 productPassRateViewModelWhite.Shift = "白班";
+                                productPassRateViewModelWhite.MachineKind = machineKind;
                                 whereClause = conditions.Any() ? "WHERE " + string.Join(" AND ", conditions) : "";
                                 extralCondition = $" and t.working_type <= 2 ";
-                                dataTable = await GetKanBanInfo(sqlServerDb, passRateModel,extralCondition);
+                                dataTable = await GetKanBanInfo(sqlServerDb, passRateModel, extralCondition);
                                 //dataTable = dtKanBan.AsEnumerable().Where(row => row.Field<string>(timeType).Contains("白班")).CopyToDataTable();
                                 productPassRateViewModel = await GetProductPassRate(sqlServerDb, whereClause, parameters, productPassRateViewModelWhite, passRateModel, CosmeticNoPassCount, PerformNoPassCount, prod_type, dataTable).ConfigureAwait(false);
                                 passrateModelList.Add(productPassRateViewModel);
 
-                                
+
                             }
                             if (dtKanBan.AsEnumerable().Any(row => row.Field<string>(timeType).Contains("夜班")))
                             {
@@ -327,7 +335,8 @@ namespace synthesis_program.Service
                                     conditions.Add($@"t.finished_stamp BETWEEN '{passRateModel.finished_stamp.ObjToDate().ToString("yyyy-MM-dd 20:30:00")}' AND '{passRateModel.finished_stamp.ObjToDate().AddDays(1).ToString("yyyy-MM-dd 8:30:00")}'");
                                 }
 
-                                    productPassRateViewModelBlack.Shift = "夜班";
+                                productPassRateViewModelBlack.Shift = "夜班";
+                                productPassRateViewModelBlack.MachineKind = machineKind;
                                 whereClause = conditions.Any() ? "WHERE " + string.Join(" AND ", conditions) : "";
                                 //dataTable = dtKanBan.AsEnumerable().Where(row => row.Field<string>(timeType).Contains("夜班")).CopyToDataTable();
                                 extralCondition = $" and t.working_type > 2 ";
@@ -339,7 +348,7 @@ namespace synthesis_program.Service
                     }
 
 
-                        return passrateModelList;
+                    return passrateModelList;
                 }
             }
             catch (Exception ex)
@@ -351,7 +360,7 @@ namespace synthesis_program.Service
         }
 
 
-        public async Task<DataTable> GetKanBanInfo(SqlSugarClient sqlServerDb, ProductPassRateModel passRateModel,string extralCondition)
+        public async Task<DataTable> GetKanBanInfo(SqlSugarClient sqlServerDb, ProductPassRateModel passRateModel, string extralCondition)
         {
             string condition = string.Empty;
             string ng = "NG";       //dtKanBan列的NG字段
@@ -446,7 +455,7 @@ namespace synthesis_program.Service
 
         }
 
-        public async Task<ProductPassRateViewModel> GetProductPassRate(SqlSugarClient sqlServerDb, string whereClause, List<SugarParameter> parameters, ProductPassRateViewModel productPassRateViewModel, ProductPassRateModel passRateModel,int CosmeticNoPassCount, int PerformNoPassCount,string prod_type,DataTable dataTable)
+        public async Task<ProductPassRateViewModel> GetProductPassRate(SqlSugarClient sqlServerDb, string whereClause, List<SugarParameter> parameters, ProductPassRateViewModel productPassRateViewModel, ProductPassRateModel passRateModel, int CosmeticNoPassCount, int PerformNoPassCount, string prod_type, DataTable dataTable)
         {
 
             // 查询当天外观合格数 = 合格数 + 不合格但二次流水正常的数量
@@ -658,11 +667,11 @@ namespace synthesis_program.Service
                 else
                 {
                     productPassRateViewModel.Top3Surface = count2 > 2 ? errorItem[count3 + 2].value2 : "";
-                    productPassRateViewModel.RepairReason_3 = count2 > 2 ? errorItem[count3 + 2].value4 : "" ;
+                    productPassRateViewModel.RepairReason_3 = count2 > 2 ? errorItem[count3 + 2].value4 : "";
                     productPassRateViewModel.Count_3 = count2 > 2 ? errorItem[count3 + 2].value3 : "";
                 }
             }
-                productPassRateViewModel.CheckCount = CosmeticPassCount + CosmeticNoPassCount + PerformNoPassCount;
+            productPassRateViewModel.CheckCount = CosmeticPassCount + CosmeticNoPassCount + PerformNoPassCount;
             passRateModel.pass_rate = (CosmeticPassCount * 100.0 / productPassRateViewModel.CheckCount).ToString("F2") + '%';
 
 
@@ -672,7 +681,6 @@ namespace synthesis_program.Service
                 productPassRateViewModel.Date = passRateModel.finished_stamp.ObjToDate().ToString("MM/dd");
                 productPassRateViewModel.Line = passRateModel.line_id != "" ? passRateModel.line_id : "全部";
                 productPassRateViewModel.Monumber = passRateModel.mo;
-                productPassRateViewModel.MachineKind = prod_type;
                 productPassRateViewModel.pass_rate = passRateModel.pass_rate;
                 productPassRateViewModel.CosmeticPassCount = CosmeticPassCount;
                 productPassRateViewModel.CosmeticErrorCount = CosmeticNoPassCount;
@@ -722,15 +730,15 @@ namespace synthesis_program.Service
             }
         }
 
-        
 
-        public async Task<List<ProductRecords>> QueryProductInfo(string code,string prod_type,string order_no)
+
+        public async Task<List<ProductRecords>> QueryProductInfo(string code, string prod_type, string order_no)
         {
             try
             {
                 string database = "hts_prod_" + code;
                 ProductRecords product = new ProductRecords();
-                List<ProductRecords> productList = new List<ProductRecords> ();
+                List<ProductRecords> productList = new List<ProductRecords>();
                 List<ProductRecords> resultList = new List<ProductRecords>();
                 string sql = string.Empty;
                 var sqlServerConfig = new ConnectionConfig()
@@ -825,7 +833,7 @@ namespace synthesis_program.Service
                     string sql = $@"select t.ORDER_NO from HS_MO t where t.MODEL like '%{prod_type}%' and SUBSTRING(t.PART_NO, 1, 2) = '00'";
                     return await sqlServerDb.Ado.SqlQueryAsync<string>(sql).ConfigureAwait(false);
                 }
-                
+
             }
             catch (Exception)
             {
@@ -847,7 +855,7 @@ namespace synthesis_program.Service
                         stationStr += item.Code + ",";
                     }
                 }
-                
+
                 stationStr = stationStr.TrimEnd(',');
                 //先查询是否已存在数据，如果不存在则插入
                 string checkSql = $@"SELECT COUNT(1) FROM TagsManage.station WHERE prod_type = '{prod_type}' and status = 1";
@@ -864,7 +872,7 @@ namespace synthesis_program.Service
                     var result = await _db.Instance.Ado.ExecuteCommandAsync(sql).ConfigureAwait(false);
                     return result;
                 }
-                    
+
             }
             catch (Exception)
             {
@@ -900,5 +908,185 @@ namespace synthesis_program.Service
                 throw;
             }
         }
+
+        /// <summary>
+        /// 获取初始化机型信息
+        /// </summary>
+        /// <returns></returns>
+        public async Task<List<Prod_TypeModel>> QueryProdType()
+        {
+            try
+            {
+                string sql = $@"SELECT t.`code`,t.`name` FROM hts_pcs.prod_type t WHERE t.CODE > 'A001' ORDER BY t.name";
+                var codes = await _db.Instance.Ado.SqlQueryAsync<Prod_TypeModel>(sql).ConfigureAwait(false);
+
+                return codes;
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// 根据输入框检索
+        /// </summary>
+        /// <param name="keyword"></param>
+        /// <returns></returns>
+        public List<ProdLineManageModel> SearchLines(string keyword)
+        {
+            GetNewConnByPcs("misc");
+            return _db.Instance.Queryable<ProdLineManageModel>()
+                .Where(t => t.PartNo.Contains(keyword) || t.Name.Contains(keyword)).Where(p => p.IsValid == 1)
+                .ToList();
+        }
+
+
+        public bool DeleteLines(int id)
+        {
+            string sql = $@"update hts_misc.prod_line_material set isvalid = 0,editime = NOW(),editor = @editor where id = @Id";
+            var result = _db.Instance.Ado.ExecuteCommand(sql, new { Id = id, editor = HtsDB.User });
+            if (result > 0)
+                return true;
+            else
+                return false;
+        }
+
+        public async Task<List<ProdStationModel>> GetStationsByProdType(string prod_type)
+        {
+            try
+            {
+                //string sql = $@"select CONCAT(t.`name`,'+',t.`code`) `name`,t.`code` from hts_pcs.prod_station t where t.prod_type = @ProdType;";
+                string sql = $@"select t.`name`,t.`code` from hts_pcs.prod_station t where t.prod_type = @ProdType";
+                var stations = await _db.Instance.Ado.SqlQueryAsync<ProdStationModel>(sql, new { ProdType = prod_type }).ConfigureAwait(false);
+                return stations;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        public async Task<List<ProdLineManageModel>> QueryLinesAsync(string prodType,string station)
+        {
+            try
+            {
+                string sql = $@"SELECT t.* FROM hts_misc.Prod_line_Material t WHERE t.prod_type = @prod_type and t.station = @Station and t.isvalid = 1";
+                var lines = await _db.Instance.Ado.SqlQueryAsync<ProdLineManageModel>(sql,new { prod_type = prodType,Station = station}).ConfigureAwait(false);
+                return lines;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+
+        /// <summary>
+        /// 检查料号是否已存在
+        /// </summary>
+        /// <param name="partNo"></param>
+        /// <returns></returns>
+        public bool PartNoExists(string partNo)
+        {
+            string sql = $@"select 1 from hts_misc.Prod_line_Material t where t.PartNo = @PartNo and t.isvalid = 1 limit 1";
+            var result = _db.Instance.Ado.SqlQuerySingle<int>(sql, new { PartNo = partNo });
+            if (result > 0)
+                return true;
+            else
+                return false;
+        }
+
+        /// <summary>
+        /// 检查批号是否已存在
+        /// </summary>
+        /// <param name="batchNo"></param>
+        /// <returns></returns>
+        public bool BatchNoExists(string batchNo)
+        {
+            string sql = $@"select 1 from tags t where t.BatchNo = @BatchNo and t.isvalid = 1 limit 1";
+            var result = _db.Instance.Ado.SqlQuerySingle<int>(sql, new { BatchNo = batchNo });
+            if (result > 0)
+                return true;
+            else
+                return false;
+        }
+
+
+        public bool InsertTag(ProdLineManageModel tag)
+        {
+            try
+            {
+                GetNewConnByPcs("misc");
+                _db.Instance.Ado.BeginTran();
+                var result = _db.Instance.Insertable(tag).ExecuteCommand() > 0;
+                // _db.Instance.Insertable(sequence).ExecuteCommand();
+                _db.Instance.Ado.CommitTran();
+                return result;
+            }
+            catch
+            {
+                _db.Instance.Ado.RollbackTran();
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// 检查料号是否重复(编辑时使用)
+        /// </summary>
+        /// <param name="sequenceNoStart"></param>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public bool CheckRepeatPartNoStart(string partNo, int id)
+        {
+            string sql = $@"select 1 from hts_misc.Prod_line_Material t where t.PartNo = @PartNo and t.ID = @Id limit 1";
+            var result = _db.Instance.Ado.SqlQuerySingle<int>(sql, new { PartNo = partNo, Id = id });
+            if (result > 0)     //PartNo未修改
+                return true;
+            else
+            {
+                string sql1 = $@"select 1 from hts_misc.Prod_line_Material t where t.PartNo <> @PartNo and t.ID = @Id limit 1";
+                var result1 = _db.Instance.Ado.SqlQuerySingle<int>(sql1, new { PartNo = partNo, Id = id });
+                if (result1 > 0)    //PartNo修改了
+                {
+                    string sql2 = $@"select 1 from hts_misc.Prod_line_Material t where t.PartNo = @PartNo and t.ID <> @Id limit 1";
+                    var result2 = _db.Instance.Ado.SqlQuerySingle<int>(sql2, new { PartNo = partNo, Id = id });
+                    if (result2 > 0)  //PartNo修改了,并且重复
+                    {
+                        return false;
+                    }
+                    else
+                    {
+                        return true;
+                    }
+                }
+                else
+                    return true;
+
+            }
+
+        }
+
+        public bool UpdateTag(ProdLineManageModel tag)
+        {
+            GetNewConnByPcs("misc");
+            return _db.Instance.Updateable(tag).ExecuteCommand() > 0;
+        }
+
+        //public ProdLineManageModel GetLatestData(ProdLineManageModel prodLineManageModel)
+        //{
+        //    if (!string.IsNullOrEmpty(tagsModel.MachineKind))
+        //    {
+        //        string sql = $@"select t.* from tags t where t.MachineKind = @machineKind order by t.createtime desc limit 1";
+        //        return _db.Instance.Ado.SqlQuerySingle<TagsModel>(sql, new { machineKind = prodLineManageModel.MachineKind });
+        //    }
+        //    else
+        //    {
+        //        return null;
+        //    }
+
+        //}
     }
+
 }

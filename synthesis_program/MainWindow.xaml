@@ -26,9 +26,10 @@
                 <MenuItem x:Name="WholeThrouthRate" IsEnabled="False" Header="直通率" Click="QueryRecords_Click"/>
                 <MenuItem x:Name="RecordProductInfo" IsEnabled="False" Header="生产编号记录" Click="ProductRecords_Click"/>
             </MenuItem>
-            <MenuItem x:Name="ConfigMenu"  Header="配置/维护" Height="26" Width="65" Margin="3,0" DockPanel.Dock="Left">
+            <MenuItem x:Name="ConfigMenu"  Header="配置/维护" Height="26" Width="80" Margin="3,0" DockPanel.Dock="Left">
                 <MenuItem x:Name="NSSMConfig" IsEnabled="False" Header="NSSM维护项目" Click="NSSMConfig_Click"/>
                 <MenuItem x:Name="DirectRate" IsEnabled="False" Header="直通率站点维护" Click="DirectConfig_Click"/>
+                <MenuItem x:Name="LineManage" IsEnabled="True" Header="线束信息维护" Click="LineManage_Click"/>
             </MenuItem>
             <MenuItem x:Name="Setting"  Header="设置" Height="26" Width="65" Margin="3,0" DockPanel.Dock="Right">
                 <MenuItem x:Name="Language" IsEnabled="True" Header="Tiếng Việt" Click="ChangeLanguage_Click"/>

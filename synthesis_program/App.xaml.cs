@@ -30,9 +30,18 @@ namespace synthesis_program
             }
 
             base.OnStartup(e);
-            // 启动时强制设置为中文
-            Misc.SetLanguage("cn");
-            string[] EnvArgs = e.Args;
+            
+            //if (HtsDB.Servers.sFactoryCode.ToUpper() == "NJ")
+            //{
+                // 启动时强制设置为中文
+                Misc.SetLanguage("cn");
+            //}
+            //else
+            //{
+            //    // 启动时强制设置为越南
+            //    Misc.SetLanguage("vi");
+            //}
+                string[] EnvArgs = e.Args;
             try
             {
                 string myDebugCfg = @"d:\MyDebug.ini";

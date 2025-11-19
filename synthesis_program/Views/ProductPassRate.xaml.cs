@@ -123,8 +123,8 @@ namespace synthesis_program.Views
                 line_id = line.SelectedItem?.ToString()
             };
 
-            var list = await tableService.QueryPassRate(passRateModel, code);
-            SourceList.Clear(); // 清空现有数据
+            var list = await tableService.QueryPassRate(passRateModel, code, this.prod_type.SelectedItem.ToString());
+            //SourceList.Clear(); // 清空现有数据
             foreach (var item in list)
             {
                 SourceList.Add(item);
@@ -196,6 +196,8 @@ namespace synthesis_program.Views
                     }
                 }
             }
+
+            
         }
 
         private void mo_Loaded(object sender, RoutedEventArgs e)
@@ -328,15 +330,19 @@ namespace synthesis_program.Views
                             worksheet.Cells[row, 35].Value = item.Count_3;
 
                             // 直通率单元格特殊处理
-                            var rateCell = worksheet.Cells[row, 12];
+                            var rateCell = worksheet.Cells[row, 13];
                             rateCell.Value = item.pass_rate;
 
                             // 当直通率<95%时设置红色背景
-                            if (!item.pass_rate.Contains("NaN") &&
-                                Convert.ToInt32(item.pass_rate.Substring(0, item.pass_rate.Length - 1)) < 95)
+                            if (!item.pass_rate.Contains("NaN"))
                             {
-                                rateCell.Style.Fill.PatternType = ExcelFillStyle.Solid;
-                                rateCell.Style.Fill.BackgroundColor.SetColor(ColorTranslator.FromHtml("#FFC7CE"));
+                                double targetNum = Convert.ToDouble(item.pass_rate.Substring(0, item.pass_rate.Length - 1));
+                                if ((item.MachineKind == "A05F" && targetNum < 99.5) || (item.Line == "A02" && targetNum < 95.0) || (item.MachineKind != "A05F" && item.Line != "A02" && targetNum < 94.0))
+                                {
+                                    rateCell.Style.Fill.PatternType = ExcelFillStyle.Solid;
+                                    rateCell.Style.Fill.BackgroundColor.SetColor(ColorTranslator.FromHtml("#FFC7CE"));
+                                }
+                                
                             }
 
                             row++;

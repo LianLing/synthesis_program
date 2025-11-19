@@ -126,6 +126,8 @@
     </ApplicationDefinition>
     <Compile Include="Interface\ILanguageRefreshable.cs" />
     <Compile Include="Models\InterimModel.cs" />
+    <Compile Include="Models\ProdLineManageModel.cs" />
+    <Compile Include="Models\ProdStationModel.cs" />
     <Compile Include="Models\ProductPassRateModel.cs" />
     <Compile Include="Models\ProductRecords.cs" />
     <Compile Include="Models\Prod_TypeModel.cs" />
@@ -156,6 +158,9 @@
     </Compile>
     <Compile Include="Views\ProductRecordPage.xaml.cs">
       <DependentUpon>ProductRecordPage.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\LineManagePage.xaml.cs">
+      <DependentUpon>LineManagePage.xaml</DependentUpon>
     </Compile>
     <Compile Include="Views\SaveRecordPage.xaml.cs">
       <DependentUpon>SaveRecordPage.xaml</DependentUpon>
@@ -190,6 +195,10 @@
     <Page Include="Views\ProductRecordPage.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\LineManagePage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
     </Page>
     <Page Include="Views\SaveRecordPage.xaml">
       <Generator>MSBuild:Compile</Generator>

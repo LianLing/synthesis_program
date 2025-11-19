@@ -221,5 +221,12 @@ namespace synthesis_program.Views
                 (currentPage as ILanguageRefreshable)?.RefreshTexts();
             }
         }
+
+        //线束信息维护
+        private void LineManage_Click(object sender, RoutedEventArgs e)
+        {
+            WindowState = WindowState.Maximized;          // 最大化窗口
+            mainFrame.Navigate(new LineManagePage());
+        }
     }
 }
