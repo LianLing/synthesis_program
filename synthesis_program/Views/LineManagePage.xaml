@@ -26,7 +26,7 @@
                   BorderBrush="#FFCCCCCC" SelectedIndex="0"
                   IsEditable="True" Loaded="ModelComboBox_Loaded"
                   ItemsSource="{Binding machineKind}"
-              SelectedItem="MachineKindSingle" SelectionChanged="ProdTypecmb_SelectionChanged" DropDownOpened="prod_type_DropDownOpened">
+                  SelectionChanged="ProdTypecmb_SelectionChanged" DropDownOpened="prod_type_DropDownOpened">
                     </ComboBox>
                 </StackPanel>
                 <Label Content="站点：" VerticalAlignment="Center" Margin="0,5"/>
@@ -67,7 +67,7 @@
                         </DataGrid.Resources>
 
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="ID" Binding="{Binding Id}" IsReadOnly="True" Width="Auto"/>
+                            <DataGridTextColumn Header="ID" Binding="{Binding ID}" IsReadOnly="True" Width="Auto"/>
                             <DataGridTextColumn Header="机型" Binding="{Binding ProdType}" IsReadOnly="True" Width="Auto"/>
                             <DataGridTextColumn Header="站点" Binding="{Binding Station}" IsReadOnly="True" Width="Auto"/>
                             <DataGridTextColumn Header="站点码" Binding="{Binding Station_Code}" IsReadOnly="True" Width="Auto"/>

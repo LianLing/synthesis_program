@@ -22,7 +22,7 @@ using static HtsCommon.DBMySql8.HtsDB;
 namespace synthesis_program.Views
 {
     // 实现语言刷新接口
-    public partial class LineManagePage : Page, ILanguageRefreshable
+    public partial class LineManagePage : Page, INotifyPropertyChanged
     {
         //站点
         public ObservableCollection<ProdStationModel> Stations { get; set; } = new ObservableCollection<ProdStationModel>();
@@ -60,7 +60,7 @@ namespace synthesis_program.Views
         }
         private bool IsInitialized = false;
 
-        //public event PropertyChangedEventHandler PropertyChanged;
+        public event PropertyChangedEventHandler PropertyChanged;
 
         private async Task InitializeProdTypes()
         {
@@ -176,8 +176,11 @@ namespace synthesis_program.Views
                     return;
                 }
 
-                linesDataGrid.ItemsSource = await dbService.QueryLinesAsync(prodType, station);
-
+                var itemSource = await dbService.QueryLinesAsync(prodType, station);
+                foreach (var item in itemSource)
+                {
+                    LineMaterialList.Add(item);
+                }
 
             }
             catch (SqlSugar.SqlSugarException ex)
@@ -220,7 +223,7 @@ namespace synthesis_program.Views
             this.NavigationService?.Navigate(addPage);
         }
 
-        private async void SaveButton_Click(object sender, RoutedEventArgs e)
+        private void SaveButton_Click(object sender, RoutedEventArgs e)
         {
             try
             {

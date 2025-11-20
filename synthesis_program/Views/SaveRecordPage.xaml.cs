@@ -145,7 +145,7 @@ namespace synthesis_program.Views
             this.NavigationService?.Navigate(addPage);
         }
 
-        private async void SaveButton_Click(object sender, RoutedEventArgs e)
+        private void SaveButton_Click(object sender, RoutedEventArgs e)
         {
             try
             {
