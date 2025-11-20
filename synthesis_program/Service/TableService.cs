@@ -943,10 +943,11 @@ namespace synthesis_program.Service
         }
 
 
-        public bool DeleteLines(int id)
+        public bool DeleteLines(int id,string user)
         {
-            string sql = $@"update hts_misc.prod_line_material set isvalid = 0,editime = NOW(),editor = @editor where id = @Id";
-            var result = _db.Instance.Ado.ExecuteCommand(sql, new { Id = id, editor = HtsDB.User });
+            //GetNewConnByPcs("misc");
+            string sql = $@"update hts_misc.Prod_line_Material set isvalid = 0,editime = NOW(),editor = @editor where id = @Id";
+            var result = _db.Instance.Ado.ExecuteCommand(sql, new { Id = id, editor = user });
             if (result > 0)
                 return true;
             else
@@ -972,8 +973,13 @@ namespace synthesis_program.Service
         {
             try
             {
-                string sql = $@"SELECT t.* FROM hts_misc.Prod_line_Material t WHERE t.prod_type = @prod_type and t.station = @Station and t.isvalid = 1";
-                var lines = await _db.Instance.Ado.SqlQueryAsync<ProdLineManageModel>(sql,new { prod_type = prodType,Station = station}).ConfigureAwait(false);
+                string condition = string.Empty;
+                if (!string.IsNullOrEmpty(station))
+                {
+                    condition += $" and t.station_code = '{station}'";
+                }
+                string sql = $@"SELECT t.* FROM hts_misc.Prod_line_Material t WHERE t.prod_type = @prod_type {condition} and t.isvalid = 1 order by t.id";
+                var lines = await _db.Instance.Ado.SqlQueryAsync<ProdLineManageModel>(sql,new { prod_type = prodType}).ConfigureAwait(false);
                 return lines;
             }
             catch (Exception)

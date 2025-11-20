@@ -142,7 +142,7 @@ namespace synthesis_program.Views
         {
             if (linesDataGrid.SelectedItem is ProdLineManageModel selected && selected.ID > 0)
             {
-                if (dbService.DeleteLines(selected.ID))
+                if (dbService.DeleteLines(selected.ID, HtsDB.User.sName + "[" + HtsDB.User.sID + "]"))
                 {
                     LineMaterialList.Remove(selected);
                 }
@@ -163,18 +163,19 @@ namespace synthesis_program.Views
         {
             try
             {
+                LineMaterialList.Clear();
                 if (string.IsNullOrEmpty(prodType))
                 {
                     MessageBox.Show(Misc.t("请选择机型"), Misc.t("提示"),
                                    MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
                 }
-                if (string.IsNullOrEmpty(station))
-                {
-                    MessageBox.Show(Misc.t("请选择站点"), Misc.t("提示"),
-                                   MessageBoxButton.OK, MessageBoxImage.Warning);
-                    return;
-                }
+                //if (string.IsNullOrEmpty(station))
+                //{
+                //    MessageBox.Show(Misc.t("请选择站点"), Misc.t("提示"),
+                //                   MessageBoxButton.OK, MessageBoxImage.Warning);
+                //    return;
+                //}
 
                 var itemSource = await dbService.QueryLinesAsync(prodType, station);
                 foreach (var item in itemSource)
@@ -223,7 +224,7 @@ namespace synthesis_program.Views
             this.NavigationService?.Navigate(addPage);
         }
 
-        private void SaveButton_Click(object sender, RoutedEventArgs e)
+        private async void SaveButton_Click(object sender, RoutedEventArgs e)
         {
             try
             {
@@ -268,8 +269,16 @@ namespace synthesis_program.Views
 
                         //新增记录时，自动带入机型、站点名、站点码、创建人、创建时间等信息
                         item.Prod_Type = prodType;
+                        item.Prod_Name = this.ProdTypecmb.SelectedItem.ToString();
+                        if (string.IsNullOrEmpty(this.Station.SelectedItem.ToString()))
+                        {
+                            MessageBox.Show(Misc.t("站点未选择"), Misc.t("警告"),
+                                              MessageBoxButton.OK, MessageBoxImage.Information);
+                            return;
+                        }
                         item.Station = this.Station.SelectedItem.ToString();
                         item.Station_Code = station;
+                        
                         item.Creatime = DateTime.Now;
                         item.Editime = DateTime.Now;
                         item.Creator = HtsDB.User.sName + "[" + HtsDB.User.sID + "]";
@@ -327,7 +336,13 @@ namespace synthesis_program.Views
                 // 使用翻译方法
                 MessageBox.Show($"{Misc.t("保存失败")}：{ex.Message}");
             }
-            LoadData();
+
+            var itemSource = await dbService.QueryLinesAsync(prodType, station);
+            LineMaterialList.Clear();
+            foreach (var item in itemSource)
+            {
+                LineMaterialList.Add(item);
+            }
         }
 
         //private void ShowLatestData(object sender, SelectionChangedEventArgs e)
@@ -391,12 +406,14 @@ namespace synthesis_program.Views
                 if (result != null)
                 {
                     this.Station.ItemsSource = result.Select(p => p.name).ToList();
+                    stationSelected.Add("");
                     foreach (var item in result)
                     {
                         Stations.Add(item);
                         stationSelected.Add(item.name + " " + "—" + " " + item.code);
                     }
                     this.Station.ItemsSource = stationSelected;
+                    this.Station.SelectedIndex = 0;
                 }
             }
 

@@ -75,6 +75,9 @@ namespace synthesis_program.Views
                             case "DirectRate":
                                 DirectRate.IsEnabled = true;
                                 break;
+                            case "LineManage":
+                                LineManage.IsEnabled = true;
+                                break;
                             default:
                                 break;
                         }

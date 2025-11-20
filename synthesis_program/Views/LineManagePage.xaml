@@ -68,20 +68,22 @@
 
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="ID" Binding="{Binding ID}" IsReadOnly="True" Width="Auto"/>
-                            <DataGridTextColumn Header="机型" Binding="{Binding ProdType}" IsReadOnly="True" Width="Auto"/>
+                            <DataGridTextColumn Header="机型" Binding="{Binding Prod_Name}" IsReadOnly="True" Width="Auto"/>
+                            <DataGridTextColumn Header="机型码" Binding="{Binding Prod_Type}" IsReadOnly="True" Width="Auto"/>
                             <DataGridTextColumn Header="站点" Binding="{Binding Station}" IsReadOnly="True" Width="Auto"/>
                             <DataGridTextColumn Header="站点码" Binding="{Binding Station_Code}" IsReadOnly="True" Width="Auto"/>
-                            <DataGridTextColumn Header="料号" Binding="{Binding MachineKind}" Width="Auto"/>
-                            <DataGridTextColumn Header="名称" Binding="{Binding BatchNo}" Width="Auto"/>
-                            <DataGridTextColumn Header="损耗次数" Binding="{Binding BatchCount}" Width="Auto"/>
-                            <DataGridTextColumn Header="预计使用次数" Binding="{Binding Version}" Width="Auto"/>
-                            <DataGridTextColumn Header="创建人" Binding="{Binding Creater}" IsReadOnly="True" Width="Auto"/>
+                            <DataGridTextColumn Header="料号" Binding="{Binding PartNo}" Width="Auto"/>
+                            <DataGridTextColumn Header="名称" Binding="{Binding Name}" Width="Auto"/>
+                            <DataGridTextColumn Header="损耗次数" Binding="{Binding UsedTimes}" Width="Auto"/>
+                            <DataGridTextColumn Header="预计使用次数" Binding="{Binding MaxUsedTimes}" Width="Auto"/>
+                            <DataGridTextColumn Header="是否可用" Binding="{Binding IsValid}" Width="Auto"/>
+                            <DataGridTextColumn Header="创建人" Binding="{Binding Creator}" IsReadOnly="True" Width="Auto"/>
                             <DataGridTextColumn Header="创建时间"
-                       Binding="{Binding CreateTime, StringFormat=yyyy-MM-dd HH:mm:ss}" IsReadOnly="True"
+                       Binding="{Binding Creatime, StringFormat=yyyy-MM-dd HH:mm:ss}" IsReadOnly="True"
                        Width="Auto"/>
                             <DataGridTextColumn Header="修改人" Binding="{Binding Editor}" IsReadOnly="True" Width="Auto"/>
                             <DataGridTextColumn Header="修改时间"
-                                      Binding="{Binding EditTime, StringFormat=yyyy-MM-dd HH:mm:ss}" IsReadOnly="True"
+                                      Binding="{Binding Editime, StringFormat=yyyy-MM-dd HH:mm:ss}" IsReadOnly="True"
                                       Width="Auto"/>
                             <DataGridTextColumn Header="备注" Binding="{Binding Remark}" Width="Auto"/>
                         </DataGrid.Columns>

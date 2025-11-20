@@ -18,8 +18,29 @@ namespace synthesis_program.Models
         [SugarColumn(IsPrimaryKey = true, IsIdentity = true)]
         public int ID { get; set; }
 
+
         /// <summary>
-        /// 机型
+        /// 机型名
+        /// </summary>
+        private string _prod_Name;
+        [SugarColumn(ColumnName = "Prod_Name", Length = 255)]
+        public string Prod_Name
+        {
+            get => _prod_Name;
+            set
+            {
+                if (_prod_Name != value)
+                {
+                    _prod_Name = value;
+                    IsModified = true;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+
+        /// <summary>
+        /// 机型码
         /// </summary>
         private string _prod_Type;
         [SugarColumn(ColumnName = "Prod_Type", Length = 255)]
@@ -121,7 +142,7 @@ namespace synthesis_program.Models
         /// 耗材次数
         /// </summary>
         private int _usedTimes;
-        [SugarColumn(ColumnName = "UsedTimes", Length = 255)]
+        [SugarColumn(ColumnName = "UsedTimes")]
         public int UsedTimes
         {
             get => _usedTimes;
@@ -141,8 +162,8 @@ namespace synthesis_program.Models
         /// 最大耗材次数
         /// </summary>
         private int _maxUesdTimes;
-        [SugarColumn(ColumnName = "MaxUesdTimes", Length = 255)]
-        public int MaxUesdTimes
+        [SugarColumn(ColumnName = "MaxUsedTimes")]
+        public int MaxUsedTimes
         {
             get => _maxUesdTimes;
             set
@@ -161,7 +182,7 @@ namespace synthesis_program.Models
         /// 是否有效
         /// </summary>
         private int _isValid;
-        [SugarColumn(ColumnName = "IsValid", Length = 255)]
+        [SugarColumn(ColumnName = "IsValid")]
         public int IsValid
         {
             get => _isValid;
