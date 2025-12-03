@@ -974,12 +974,16 @@ namespace synthesis_program.Service
             try
             {
                 string condition = string.Empty;
+                if (!string.IsNullOrEmpty(prodType))
+                {
+                    condition += $" and t.prod_type = '{prodType}'";
+                }
                 if (!string.IsNullOrEmpty(station))
                 {
                     condition += $" and t.station_code = '{station}'";
                 }
-                string sql = $@"SELECT t.* FROM hts_misc.Prod_line_Material t WHERE t.prod_type = @prod_type {condition} and t.isvalid = 1 order by t.id";
-                var lines = await _db.Instance.Ado.SqlQueryAsync<ProdLineManageModel>(sql,new { prod_type = prodType}).ConfigureAwait(false);
+                string sql = $@"SELECT t.* FROM hts_misc.Prod_line_Material t WHERE 1 = 1 {condition} and t.isvalid = 1 order by t.id";
+                var lines = await _db.Instance.Ado.SqlQueryAsync<ProdLineManageModel>(sql).ConfigureAwait(false);
                 return lines;
             }
             catch (Exception)

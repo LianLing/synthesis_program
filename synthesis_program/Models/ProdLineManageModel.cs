@@ -197,6 +197,25 @@ namespace synthesis_program.Models
             }
         }
 
+        /// <summary>
+        /// 是否选择
+        /// </summary>
+        private int _isChecked;
+        [SugarColumn(ColumnName = "IsChecked")]
+        public int IsChecked
+        {
+            get => _isChecked;
+            set
+            {
+                if (_isChecked != value)
+                {
+                    _isChecked = value;
+                    IsModified = true;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
 
         /// <summary>
         /// 创建人

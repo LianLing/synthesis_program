@@ -140,6 +140,7 @@ namespace synthesis_program.Views
 
         private void DeleteButton_Click(object sender, RoutedEventArgs e)
         {
+            lblWarning.Content = "";
             if (linesDataGrid.SelectedItem is ProdLineManageModel selected && selected.ID > 0)
             {
                 if (dbService.DeleteLines(selected.ID, HtsDB.User.sName + "[" + HtsDB.User.sID + "]"))
@@ -147,6 +148,7 @@ namespace synthesis_program.Views
                     LineMaterialList.Remove(selected);
                 }
             }
+            lblWarning.Content = Misc.t("删除成功");
         }
 
         private void ShowAsDialog()
@@ -163,6 +165,7 @@ namespace synthesis_program.Views
         {
             try
             {
+                lblWarning.Content = "";
                 LineMaterialList.Clear();
                 if (string.IsNullOrEmpty(prodType))
                 {
@@ -182,7 +185,7 @@ namespace synthesis_program.Views
                 {
                     LineMaterialList.Add(item);
                 }
-
+                lblWarning.Content = Misc.t("查询完成");
             }
             catch (SqlSugar.SqlSugarException ex)
             {
@@ -194,6 +197,7 @@ namespace synthesis_program.Views
 
         private void EditButton_Click(object sender, RoutedEventArgs e)
         {
+            lblWarning.Content = "";
             if (linesDataGrid.SelectedItem == null)
             {
                 // 使用翻译方法
@@ -228,6 +232,7 @@ namespace synthesis_program.Views
         {
             try
             {
+                lblWarning.Content = "";
                 // 提交所有未保存的编辑
                 linesDataGrid.CommitEdit();
 
@@ -278,26 +283,25 @@ namespace synthesis_program.Views
                         }
                         item.Station = this.Station.SelectedItem.ToString();
                         item.Station_Code = station;
-                        
+                        item.IsValid = 1;
                         item.Creatime = DateTime.Now;
                         item.Editime = DateTime.Now;
                         item.Creator = HtsDB.User.sName + "[" + HtsDB.User.sID + "]";
                         item.Editor = HtsDB.User.sName + "[" + HtsDB.User.sID + "]";
-                        item.IsValid = 1;
 
                         using (var service = new TableService())
                         {
                             if (service.InsertTag(item))
                             {
                                 // 使用翻译方法
-                                MessageBox.Show(Misc.t("添加成功"), Misc.t("提示"),
-                                              MessageBoxButton.OK, MessageBoxImage.Information);
+                                //MessageBox.Show(Misc.t("添加成功"), Misc.t("提示"),MessageBoxButton.OK, MessageBoxImage.Information);
+                                lblWarning.Content = Misc.t("添加成功");
                             }
                             else
                             {
                                 // 使用翻译方法
-                                MessageBox.Show(Misc.t("添加失败"), Misc.t("错误"),
-                                              MessageBoxButton.OK, MessageBoxImage.Error);
+                                MessageBox.Show(Misc.t("添加失败"), Misc.t("错误"),MessageBoxButton.OK, MessageBoxImage.Error);
+                                //lblWarning.Content = Misc.t("添加失败");
                             }
                         }
                     }
@@ -323,12 +327,16 @@ namespace synthesis_program.Views
                                 // 使用翻译方法
                                 MessageBox.Show($"{Misc.t("更新记录ID")}:{item.ID}{Misc.t("失败")}");
                             }
+                            else
+                            {
+                                lblWarning.Content = Misc.t("保存成功");
+                            }
                         }
                     }
                 }
 
                 // 使用翻译方法
-                MessageBox.Show(Misc.t("成功保存记录"));
+                //MessageBox.Show(Misc.t("成功保存记录"));
                 _isEditing = false;
             }
             catch (Exception ex)
@@ -427,9 +435,6 @@ namespace synthesis_program.Views
             }
         }
 
-        private void prod_type_DropDownOpened(object sender, EventArgs e)
-        {
-
-        }
+       
     }
 }
