@@ -19,8 +19,9 @@
 
             <MenuItem x:Name="LabelManage" Header="标签管理" Height="26" Width="61" DockPanel.Dock="Left">
                 <MenuItem x:Name="ServiceTable" IsEnabled="False" Header="标签维护" Click="SaveRecord_Click"/>
-                <MenuItem IsEnabled="False" Header="生成序列号" Click="GenerateSerialNumber_Click"/>
-                <MenuItem IsEnabled="False" Header="序列号规则维护" Click="EditSequenceRule_Click"/>
+                <!--<MenuItem IsEnabled="False" Header="生成序列号" Click="GenerateSerialNumber_Click"/>
+                <MenuItem IsEnabled="False" Header="序列号规则维护" Click="EditSequenceRule_Click"/>-->
+                <MenuItem x:Name="LineLable" IsEnabled="False" Header="线束标签" Click="GenerateLineNumber_Click"/>
             </MenuItem>
             <MenuItem x:Name="TableReports"  Header="报表" Height="26" Width="40" Margin="3,0" DockPanel.Dock="Left">
                 <MenuItem x:Name="WholeThrouthRate" IsEnabled="False" Header="直通率" Click="QueryRecords_Click"/>

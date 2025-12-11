@@ -256,10 +256,10 @@ namespace synthesis_program.Views
                         // 业务层重复性检查（防止绕过前端提交重复数据）
                         using (var service = new TableService())
                         {
-                            if (service.PartNoExists(partNo))
+                            if (service.PartNoExists(partNo,station))
                             {
                                 // 使用翻译方法
-                                MessageBox.Show($"{Misc.t("料号")} {partNo} {Misc.t("已存在")}", Misc.t("验证失败"),
+                                MessageBox.Show($"{Misc.t("当前站点料号")} {partNo} {Misc.t("已存在")}", Misc.t("验证失败"),
                                               MessageBoxButton.OK, MessageBoxImage.Error);
                                 return;
                             }

@@ -181,7 +181,7 @@ namespace synthesis_program.Service
             }
         }
 
-        public async Task<List<ProductPassRateViewModel>> QueryPassRate(ProductPassRateModel passRateModel, string prod_type,string machineKind)
+        public async Task<List<ProductPassRateViewModel>> QueryPassRate(ProductPassRateModel passRateModel, string prod_type, string machineKind)
         {
             try
             {
@@ -943,7 +943,7 @@ namespace synthesis_program.Service
         }
 
 
-        public bool DeleteLines(int id,string user)
+        public bool DeleteLines(int id, string user)
         {
             //GetNewConnByPcs("misc");
             string sql = $@"update hts_misc.Prod_line_Material set isvalid = 0,editime = NOW(),editor = @editor where id = @Id";
@@ -969,7 +969,7 @@ namespace synthesis_program.Service
             }
         }
 
-        public async Task<List<ProdLineManageModel>> QueryLinesAsync(string prodType,string station)
+        public async Task<List<ProdLineManageModel>> QueryLinesAsync(string prodType, string station)
         {
             try
             {
@@ -998,10 +998,10 @@ namespace synthesis_program.Service
         /// </summary>
         /// <param name="partNo"></param>
         /// <returns></returns>
-        public bool PartNoExists(string partNo)
+        public bool PartNoExists(string partNo, string station)
         {
-            string sql = $@"select 1 from hts_misc.Prod_line_Material t where t.PartNo = @PartNo and t.isvalid = 1 limit 1";
-            var result = _db.Instance.Ado.SqlQuerySingle<int>(sql, new { PartNo = partNo });
+            string sql = $@"select 1 from hts_misc.Prod_line_Material t where t.PartNo = @PartNo and t.station_code = @Station and t.isvalid = 1 limit 1";
+            var result = _db.Instance.Ado.SqlQuerySingle<int>(sql, new { PartNo = partNo, Station = station });
             if (result > 0)
                 return true;
             else
@@ -1084,19 +1084,100 @@ namespace synthesis_program.Service
             return _db.Instance.Updateable(tag).ExecuteCommand() > 0;
         }
 
-        //public ProdLineManageModel GetLatestData(ProdLineManageModel prodLineManageModel)
-        //{
-        //    if (!string.IsNullOrEmpty(tagsModel.MachineKind))
-        //    {
-        //        string sql = $@"select t.* from tags t where t.MachineKind = @machineKind order by t.createtime desc limit 1";
-        //        return _db.Instance.Ado.SqlQuerySingle<TagsModel>(sql, new { machineKind = prodLineManageModel.MachineKind });
-        //    }
-        //    else
-        //    {
-        //        return null;
-        //    }
+        /// <summary>
+        /// 获取所有线束起始料号
+        /// </summary>
+        /// <param name="prod_type"></param>
+        /// <param name="station_code"></param>
+        /// <returns></returns>
+        public async Task<List<string>> GetPartNoListByTypeAndStation(string prod_type, string station_code)
+        {
+            string sql = $@"select t.PartNo from hts_misc.Prod_line_Material t where t.Prod_Type = @prodType and t.Station_Code = @stationCode and t.IsValid = 1";
+            var lines = await _db.Instance.Ado.SqlQueryAsync<string>(sql, new { prodType = prod_type, stationCode = station_code }).ConfigureAwait(false);
+            return lines;
+        }
 
-        //}
+        public async Task<string> GetLineNumberByTypeAndStation(string prod_type, string station_code, string partNo)
+        {
+            string sql = $@"SELECT
+                              t.PartNo
+                            FROM
+                              hts_misc.prod_line_CreateAndWaste t
+                            WHERE
+                              t.Prod_Type = @prodType
+                              AND t.Station_Code = @stationCode
+                              and t.PartNo like '{partNo}%'
+                              AND t.IsValid = 1
+                              ORDER BY t.ID DESC
+                              LIMIT 1";
+            string startNo = await _db.Instance.Ado.SqlQuerySingleAsync<string>(sql, new { prodType = prod_type, stationCode = station_code }).ConfigureAwait(false);
+            if (string.IsNullOrEmpty(startNo))      //如果当前料号还没有过标签，则生成第一个标签码
+            {
+                return string.Empty;
+            }
+            else
+                return startNo;
+
+        }
+
+
+        public async Task<ProdLineManageModel> GetPartNoInfoByTypeAndStation(string prod_type, string station_code, string partNo)
+        {
+            try
+            {
+                string sql = $@"select t.* from hts_misc.Prod_line_Material t where t.Prod_Type = @prodType and t.Station_Code = @stationCode and t.PartNo = @partNo and t.IsValid = 1 LIMIT 1";
+                var partNoInfo = await _db.Instance.Ado.SqlQuerySingleAsync<ProdLineManageModel>(sql, new { prodType = prod_type, stationCode = station_code, partNo = partNo }).ConfigureAwait(false);
+                return partNoInfo;
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+        }
+
+        //插入数据到线束标签生成与报废表
+        public bool InsertLineCreateAndWaste(ProdLineCreateAndWasteModel model)
+        {
+            try
+            {
+                GetNewConnByPcs("misc");
+                _db.Instance.Ado.BeginTran();
+                var result = _db.Instance.Insertable(model).ExecuteCommand() > 0;
+                _db.Instance.Ado.CommitTran();
+                return result;
+            }
+            catch
+            {
+                _db.Instance.Ado.RollbackTran();
+                throw;
+            }
+        }
+
+
+        //查询线束的所有标签
+        public async Task<List<ProdLineCreateAndWasteModel>> GetLabelsByPartNo(string prod_type, string station_code, string partNo)
+        {
+            try
+            {
+                string sql = $@"SELECT
+                                  t.*
+                                FROM
+                                  hts_misc.prod_line_CreateAndWaste t
+                                WHERE
+                                  t.Prod_Type = @prodType
+                                  AND t.Station_Code = @stationCode
+                                  and t.PartNo like '{partNo}%'
+                                  AND t.IsValid = 1
+                                ORDER BY
+                                  t.ID";
+                var lines = await _db.Instance.Ado.SqlQueryAsync<ProdLineCreateAndWasteModel>(sql, new { prodType = prod_type, stationCode = station_code }).ConfigureAwait(false);
+                return lines;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
     }
-
 }

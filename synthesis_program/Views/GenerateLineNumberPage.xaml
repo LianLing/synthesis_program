@@ -1,0 +1,95 @@
+﻿<Page x:Class="synthesis_program.Views.GenerateLineNumberPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+      xmlns:local="clr-namespace:synthesis_program.Views"
+      mc:Ignorable="d" 
+      d:DesignHeight="950" d:DesignWidth="1300"
+      Title="GenerateLineNumberPage">
+
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" Background="White" Padding="10" Margin="10,0,0,0"
+                BorderBrush="#FFCCCCCC" BorderThickness="0 0 0 1">
+            <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Horizontal" Margin="10,0,0,15">
+
+
+                <Label Content="机型：" VerticalAlignment="Center" Margin="15,5,0,5"/>
+                <StackPanel  Margin="0,5">
+                    <ComboBox x:Name="ProdTypecmb" Width="156" Height="26" FontSize="14"
+                      BorderBrush="#FFCCCCCC" SelectedIndex="0"
+                      IsEditable="True" Loaded="ModelComboBox_Loaded"
+                      ItemsSource="{Binding machineKind}"
+                      SelectionChanged="ProdTypecmb_SelectionChanged">
+                    </ComboBox>
+                </StackPanel>
+                <Label Content="站点：" VerticalAlignment="Center" Margin="0,5"/>
+                <ComboBox x:Name="Station" Width="150" Margin="0,5" SelectionChanged="Station_SelectionChanged"/>
+                <Label Content="料号前缀：" VerticalAlignment="Center" Margin="10,5,0,5"/>
+                <ComboBox x:Name="PartNoPrefixComboBox" Width="150" Height="26" FontSize="14"
+                      BorderBrush="#FFCCCCCC" SelectedIndex="0" SelectionChanged="PartNoPrefixComboBox_SelectionChanged" Margin="0,5"/>
+                <Label Content="起始码：" VerticalAlignment="Center" Margin="20,5,0,5"/>
+                <TextBox x:Name="StartCodeTextBox" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" Width="60" Height="28" Margin="0,5"/>
+                <Label Content="数量：" VerticalAlignment="Center" Margin="20,5,0,5"/>
+                <TextBox x:Name="QuantityTextBox" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" Width="50" Height="28" Margin="0,5"/>
+                <Button x:Name="GenerateButton" Content="生成" Width="80" Margin="40,5,15,5" Click="GenerateButton_Click"/>
+                <Button x:Name="ExportButton" Content="导出Excel" Width="80" Margin="5" Click="ExportButton_Click"/>
+            </StackPanel>
+        </Border>
+        <Grid Grid.Row="1" Margin="0,10,0,0">
+            <Border Grid.Column="1" Margin="10,0,0,81" Background="White"
+                    BorderBrush="#FFCCCCCC" BorderThickness="1">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" 
+                              HorizontalScrollBarVisibility="Auto"
+                              Padding="0">
+                    <!-- 数据表格 -->
+                    <DataGrid Grid.Row="1" 
+                  x:Name="linesDataGrid"
+                  AutoGenerateColumns="False"
+                  CanUserAddRows="True" 
+                  SelectionMode="Single"
+                  SelectionUnit="FullRow"
+                  RowHeight="25"
+                  FontSize="15"
+                  ItemsSource="{Binding newCreateLabel}"
+                  >
+                        <DataGrid.Resources>
+                            <Style TargetType="DataGridColumnHeader">
+                                <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                                <Setter Property="HorizontalAlignment" Value="Stretch"/>
+                                <Setter Property="FontWeight" Value="Bold"/>
+                                <Setter Property="Height" Value="30"/>
+                            </Style>
+                        </DataGrid.Resources>
+
+                        <DataGrid.Columns>
+                            <!--<DataGridTextColumn Header="ID" Binding="{Binding ID}" IsReadOnly="True" Width="Auto"/>-->
+                            <DataGridTextColumn Header="机型码" Binding="{Binding Prod_Type}" IsReadOnly="True" Width="Auto"/>
+                            <DataGridTextColumn Header="机型" Binding="{Binding Prod_Name}" IsReadOnly="True" Width="Auto"/>
+                            <DataGridTextColumn Header="站点码" Binding="{Binding Station_Code}" IsReadOnly="True" Width="Auto"/>
+                            <DataGridTextColumn Header="站点" Binding="{Binding Station_Name}" IsReadOnly="True" Width="Auto"/>
+
+                            <DataGridTextColumn Header="料号" Binding="{Binding PartNo}" IsReadOnly="True" Width="Auto"/>
+                            <DataGridTextColumn Header="名称" Binding="{Binding Name}" IsReadOnly="True" Width="Auto"/>
+                            <DataGridTextColumn Header="创建人" Binding="{Binding Creator}" IsReadOnly="True" Width="Auto"/>
+                            <DataGridTextColumn Header="创建时间"
+                   Binding="{Binding Creatime, StringFormat=yyyy-MM-dd HH:mm:ss}" IsReadOnly="True"
+                   Width="Auto"/>
+                            
+                            <!--<DataGridTextColumn Header="备注" Binding="{Binding Remark}" Width="Auto"/>-->
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </ScrollViewer>
+            </Border>
+
+            <Border Margin="10,0,0,0" Background="White" BorderBrush="#FFCCCCCC" BorderThickness="1" Height="62" VerticalAlignment="Bottom">
+                <Label x:Name="lblWarning"  Content="" HorizontalAlignment="Center" VerticalAlignment="Center" Width="200" Height="30" FontWeight="Bold" Foreground="Red"/>
+            </Border>
+        </Grid>
+    </Grid>
+</Page>

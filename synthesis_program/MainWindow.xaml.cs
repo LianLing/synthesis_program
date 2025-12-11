@@ -231,5 +231,11 @@ namespace synthesis_program.Views
             WindowState = WindowState.Maximized;          // 最大化窗口
             mainFrame.Navigate(new LineManagePage());
         }
+
+        private void GenerateLineNumber_Click(object sender, RoutedEventArgs e)
+        {
+            WindowState = WindowState.Maximized;          // 最大化窗口
+            mainFrame.Navigate(new GenerateLineNumberPage());
+        }
     }
 }
