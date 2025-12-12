@@ -34,10 +34,11 @@
                 <ComboBox x:Name="PartNoPrefixComboBox" Width="150" Height="26" FontSize="14"
                       BorderBrush="#FFCCCCCC" SelectedIndex="0" SelectionChanged="PartNoPrefixComboBox_SelectionChanged" Margin="0,5"/>
                 <Label Content="起始码：" VerticalAlignment="Center" Margin="20,5,0,5"/>
-                <TextBox x:Name="StartCodeTextBox" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" Width="60" Height="28" Margin="0,5"/>
+                <TextBox x:Name="StartCodeTextBox" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" IsEnabled="False" Width="60" Height="28" Margin="0,5"/>
                 <Label Content="数量：" VerticalAlignment="Center" Margin="20,5,0,5"/>
                 <TextBox x:Name="QuantityTextBox" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" Width="50" Height="28" Margin="0,5"/>
                 <Button x:Name="GenerateButton" Content="生成" Width="80" Margin="40,5,15,5" Click="GenerateButton_Click"/>
+                <Button x:Name="SaveButton" Content="保存" Width="80" Margin="20,5,15,5" Click="SaveButton_Click"/>
                 <Button x:Name="ExportButton" Content="导出Excel" Width="80" Margin="5" Click="ExportButton_Click"/>
             </StackPanel>
         </Border>
@@ -68,7 +69,7 @@
                         </DataGrid.Resources>
 
                         <DataGrid.Columns>
-                            <!--<DataGridTextColumn Header="ID" Binding="{Binding ID}" IsReadOnly="True" Width="Auto"/>-->
+                            <DataGridCheckBoxColumn Header="是否使用该料" Binding="{Binding IsChecked, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="100"/>
                             <DataGridTextColumn Header="机型码" Binding="{Binding Prod_Type}" IsReadOnly="True" Width="Auto"/>
                             <DataGridTextColumn Header="机型" Binding="{Binding Prod_Name}" IsReadOnly="True" Width="Auto"/>
                             <DataGridTextColumn Header="站点码" Binding="{Binding Station_Code}" IsReadOnly="True" Width="Auto"/>

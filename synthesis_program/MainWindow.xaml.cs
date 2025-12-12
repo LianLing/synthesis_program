@@ -78,6 +78,9 @@ namespace synthesis_program.Views
                             case "LineManage":
                                 LineManage.IsEnabled = true;
                                 break;
+                            case "LineLabel":
+                                LineLabel.IsEnabled = true;
+                                break;
                             default:
                                 break;
                         }

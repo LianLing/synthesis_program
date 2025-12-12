@@ -1179,5 +1179,23 @@ namespace synthesis_program.Service
                 throw;
             }
         }
+
+
+        //更新料号状态
+        public void UpdateStationStatus(ProdLineCreateAndWasteModel model)
+        {
+            try
+            {
+                GetNewConnByPcs("misc");
+                _db.Instance.Ado.BeginTran();
+                var result = _db.Instance.Updateable(model).ExecuteCommand() > 0;
+                _db.Instance.Ado.CommitTran();
+            }
+            catch
+            {
+                _db.Instance.Ado.RollbackTran();
+                throw;
+            }
+        }
     }
 }

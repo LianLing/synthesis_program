@@ -240,61 +240,73 @@ namespace synthesis_program.Views
 
         private async void GenerateButton_Click(object sender, RoutedEventArgs e)
         {
-            string quantityText = QuantityTextBox.Text.Trim();      //数量
-            int quantity = string.IsNullOrEmpty(quantityText)? 0 : quantityText.ObjToInt();           //转换数量
-            int startNumber = Convert.ToInt32(StartCodeTextBox.Text.Trim());        //起始码
-            string startCode = StartCodeTextBox.Text.Trim();            //起始码文本
-            
-
-            if (string.IsNullOrEmpty(quantityText) || quantity == 0)
+            try
             {
-                MessageBox.Show(Misc.t("请输入正确的数量！"));
-                return;
-            }
-            else
-            {
-                newCreateLabel.Clear();
-                generatedCodes.Clear();
-                //查询料号信息
-                var partNoInfo = await dbService.GetPartNoInfoByTypeAndStation(prodType, station, PartNoPrefixComboBox.SelectedItem.ToString());
+                string quantityText = QuantityTextBox.Text.Trim();      //数量
+                int quantity = string.IsNullOrEmpty(quantityText) ? 0 : quantityText.ObjToInt();           //转换数量
+                int startNumber = Convert.ToInt32(StartCodeTextBox.Text.Trim());        //起始码
+                string startCode = StartCodeTextBox.Text.Trim();            //起始码文本
 
 
-                for (int i = 0; i < quantity; i++)
+                if (string.IsNullOrEmpty(quantityText) || quantity == 0)
                 {
-                    string code = (startNumber + i).ToString("D4");
-                    string fullCode = $"{partNoInfo.PartNo}-{code}";
-                    generatedCodes.Add(fullCode);
+                    MessageBox.Show(Misc.t("请输入正确的数量！"));
+                    return;
                 }
-
-                foreach (var code in generatedCodes)
+                else
                 {
-                    ProdLineCreateAndWasteModel newLabel = new ProdLineCreateAndWasteModel
+                    newCreateLabel.Clear();
+                    generatedCodes.Clear();
+                    //查询料号信息
+                    var partNoInfo = await dbService.GetPartNoInfoByTypeAndStation(prodType, station, PartNoPrefixComboBox.SelectedItem.ToString());
+
+
+                    for (int i = 0; i < quantity; i++)
                     {
-                        Prod_Type = prodType,
-                        Prod_Name = partNoInfo.Prod_Name,
-                        Station_Code = partNoInfo.Station_Code,
-                        Station_Name = partNoInfo.Station,
-                        PartNo = code,
-                        Name = partNoInfo.Name,
-                        IsValid = 1,
-                        Creator = HtsDB.User.sName + "[" + HtsDB.User.sID + "]",
-                        Creatime = DateTime.Now,
-                        IsWaste = 0,
-                        Waster = "",
-                        WasteTime = DateTime.MinValue,
-                        Remark = "",
-                        Extent_Value = ""
-                    };
-                    newCreateLabel.Add(newLabel);
-                    dbService.InsertLineCreateAndWaste(newLabel);       //批量插入数据库
+                        string code = (startNumber + i).ToString("D4");
+                        string fullCode = $"{partNoInfo.PartNo}-{code}";
+                        generatedCodes.Add(fullCode);
+                    }
+
+                    foreach (var code in generatedCodes)
+                    {
+                        ProdLineCreateAndWasteModel newLabel = new ProdLineCreateAndWasteModel
+                        {
+                            Prod_Type = prodType,
+                            Prod_Name = partNoInfo.Prod_Name,
+                            Station_Code = partNoInfo.Station_Code,
+                            Station_Name = partNoInfo.Station,
+                            PartNo = code,
+                            Name = partNoInfo.Name,
+
+                            IsValid = 1,
+                            Creator = HtsDB.User.sName + "[" + HtsDB.User.sID + "]",
+                            Creatime = DateTime.Now,
+                            IsWaste = 0,
+                            Waster = "",
+                            WasteTime = DateTime.MinValue,
+                            Remark = "",
+                            Extent_Value = ""
+                        };
+
+                        newCreateLabel.Add(newLabel);
+                        dbService.InsertLineCreateAndWaste(newLabel);       //批量插入数据库
+                    }
+
+                    StartCodeTextBox.Text = (quantity + startNumber).ToString("D4");
                 }
 
-                StartCodeTextBox.Text = (quantity + startNumber).ToString("D4");
+                lblWarning.Content = Misc.t("生成成功");
+            }
+            catch (Exception ex)
+            {
+
+                MessageBox.Show(Misc.t("生成失败"), Misc.t("提示"),
+                                  MessageBoxButton.OK, MessageBoxImage.Information);
             }
         }
 
 
-        //将生成的序列号导出到Excel
         // 将生成的序列号导出到Excel
         private void ExportButton_Click(object sender, RoutedEventArgs e)
         {
@@ -373,6 +385,24 @@ namespace synthesis_program.Views
                               MessageBoxButton.OK, MessageBoxImage.Error);
             }
             
+        }
+
+        private void SaveButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                foreach (var item in newCreateLabel)
+                {
+                    dbService.UpdateStationStatus(item);
+                }
+                lblWarning.Content = Misc.t("保存成功");
+            }
+            catch (Exception ex)
+            {
+
+                MessageBox.Show($"{Misc.t("保存失败")}：{ex.Message}", Misc.t("错误"),
+                              MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
     }
 }
