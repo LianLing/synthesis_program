@@ -52,7 +52,6 @@
                     <DataGrid Grid.Row="1" 
                   x:Name="linesDataGrid"
                   AutoGenerateColumns="False"
-                  CanUserAddRows="True" 
                   SelectionMode="Single"
                   SelectionUnit="FullRow"
                   RowHeight="25"

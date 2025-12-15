@@ -233,6 +233,8 @@ namespace synthesis_program.Views
                 var labelList = await dbService.GetLabelsByPartNo(prodType, station, partNo);
                 foreach (var item in labelList)
                 {
+                    if(item.IsUsed == 1)
+                        item.IsChecked = true;
                     newCreateLabel.Add(item);
                 }
             }

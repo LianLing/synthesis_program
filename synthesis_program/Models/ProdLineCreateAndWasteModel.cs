@@ -29,6 +29,8 @@ namespace synthesis_program.Models
         public int IsWaste { get; set; } = 0;        //是否报废 0否 1是
         public string Waster { get; set; }      //报废人
         public DateTime WasteTime { get; set; }     //报废时间
+        public int UsedTimes { get; set; }          //已使用次数
+        public int MaxUsedTimes { get; set; }       //最大使用次数
         public string Remark { get; set; }      //备注
         public string Extent_Value { get; set; }        //扩展字段
 
