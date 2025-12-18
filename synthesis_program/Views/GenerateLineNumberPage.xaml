@@ -32,9 +32,9 @@
                 <ComboBox x:Name="Station" Width="150" Margin="0,5" SelectionChanged="Station_SelectionChanged"/>
                 <Label Content="料号前缀：" VerticalAlignment="Center" Margin="10,5,0,5"/>
                 <ComboBox x:Name="PartNoPrefixComboBox" Width="150" Height="26" FontSize="14"
-                      BorderBrush="#FFCCCCCC" SelectedIndex="-1" SelectionChanged="PartNoPrefixComboBox_SelectionChanged" Margin="0,5"/>
+                      BorderBrush="#FFCCCCCC" SelectionChanged="PartNoPrefixComboBox_SelectionChanged" Margin="0,5"/>
                 <Label Content="起始码：" VerticalAlignment="Center" Margin="20,5,0,5"/>
-                <TextBox x:Name="StartCodeTextBox" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" IsEnabled="False" Width="60" Height="28" Margin="0,5"/>
+                <TextBox x:Name="StartCodeTextBox" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"  IsEnabled="False" Width="60" Height="28" Margin="0,5"/>
                 <Label Content="数量：" VerticalAlignment="Center" Margin="20,5,0,5"/>
                 <TextBox x:Name="QuantityTextBox" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" Width="50" Height="28" Margin="0,5"/>
                 <Button x:Name="GenerateButton" Content="生成" Width="80" Margin="40,5,15,5" Click="GenerateButton_Click"/>
