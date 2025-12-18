@@ -466,9 +466,7 @@ namespace synthesis_program.Service
                                                       hts_pcs.prod_station s
                                                       {whereClause}
                                                       AND t.station_curr = s.`code`
-                                                      AND s.`name` like '%外观%'
-                                                      AND t.err_code = '0000'
-                                                      ";
+                                                      AND t.err_code = '0000'";
             //##AND NOT EXISTS (SELECT 1 FROM prod_test_rcds t2 WHERE t2.sn = t.sn AND t2.station_curr = '00CF098')
             int CosmeticPassCount = await sqlServerDb.Ado.GetIntAsync(sqlCosmeticPassCount, parameters.ToArray()).ConfigureAwait(false);
 

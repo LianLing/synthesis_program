@@ -207,6 +207,7 @@ namespace synthesis_program.Views
             if (!string.IsNullOrEmpty(prodType) && !string.IsNullOrEmpty(station))
             {
                 var lineNumberList = await dbService.GetPartNoListByTypeAndStation(prodType, station);
+                
                 this.PartNoPrefixComboBox.ItemsSource = lineNumberList;
             }
         }
